@@ -1,0 +1,16 @@
+package com.example.homework.common.audit;
+
+public enum AuditAction {
+    COURSE_CREATE,
+    ASSIGNMENT_CREATE,
+    SUBMISSION_CREATE,
+    PLAGIARISM_TASK_CREATE,
+    PLAGIARISM_TASK_RETRY,
+    PLAGIARISM_TASK_CANCEL,
+    REVIEW_UPSERT,
+    REVIEW_RUBRIC_UPSERT,
+    EVAL_CASE_CREATE,
+    EVAL_RUN,
+    FILE_UPLOAD,
+    FILE_DOWNLOAD
+}
