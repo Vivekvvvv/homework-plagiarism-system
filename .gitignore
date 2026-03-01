@@ -1,0 +1,39 @@
+# === IDE ===
+.idea/
+.vscode/
+*.iml
+*.swp
+*~
+
+# === OS ===
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# === Environment ===
+.env
+.env.local
+.env.development.local
+.env.production.local
+
+# === Backend ===
+backend/target/
+backend/uploads/
+*.jar
+*.class
+*.log
+
+# === Frontend ===
+frontend/node_modules/
+frontend/dist/
+frontend/.test-dist/
+
+# === Build & Cache ===
+*.bak
+*.tmp
+.cache/
+
+# === Project ===
+artifacts/
+uploads/
+.prefs/
