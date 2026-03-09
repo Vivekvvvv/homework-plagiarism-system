@@ -1,0 +1,9 @@
+[Unit]
+Description=Renew homework TLS certificates
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/homework
+ExecStart=/bin/bash /opt/homework/scripts/server-renew-cert.sh

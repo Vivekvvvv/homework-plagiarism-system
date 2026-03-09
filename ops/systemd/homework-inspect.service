@@ -1,0 +1,9 @@
+[Unit]
+Description=Run homework server inspection
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/homework
+ExecStart=/bin/bash /opt/homework/scripts/server-inspect.sh

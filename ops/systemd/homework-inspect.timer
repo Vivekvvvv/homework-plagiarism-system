@@ -1,0 +1,10 @@
+[Unit]
+Description=Run homework server inspection every 6 hours
+
+[Timer]
+OnCalendar=*-*-* 00,06,12,18:00:00
+Persistent=true
+Unit=homework-inspect.service
+
+[Install]
+WantedBy=timers.target

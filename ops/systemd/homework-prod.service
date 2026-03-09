@@ -1,0 +1,13 @@
+[Unit]
+Description=Homework production stack
+After=network-online.target docker.service
+Wants=network-online.target docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/homework
+ExecStart=/bin/bash /opt/homework/scripts/server-deploy-prod.sh
+RemainAfterExit=yes
+
+[Install]
+WantedBy=multi-user.target
