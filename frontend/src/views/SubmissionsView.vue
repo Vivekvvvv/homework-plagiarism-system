@@ -341,7 +341,7 @@ const submit = async () => {
       return;
     }
     if (submitMode.value === "file") {
-      const uploadRes = await uploadFileApi(selectedFile.value);
+      const uploadRes = await uploadFileApi(selectedFile.value!);
       await createSubmissionApi({
         assignmentId: form.assignmentId,
         studentId: form.studentId,

@@ -1,6 +1,7 @@
 package com.example.homework.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.homework.common.QueryHelper;
 import com.example.homework.common.audit.AuditAction;
 import com.example.homework.common.exception.BusinessException;
 import com.example.homework.common.exception.ErrorCodes;
@@ -35,7 +36,7 @@ public class CourseService {
     public Course create(CourseCreateRequest request, SysUser actor) {
         authzService.requireRoleIn(actor, UserRole.ADMIN, UserRole.TEACHER);
         if (authService.isTeacher(actor) && !actor.getId().equals(request.getTeacherId())) {
-            throw new BusinessException(ErrorCodes.FORBIDDEN, "Teacher can only create course for self");
+            throw new BusinessException(ErrorCodes.FORBIDDEN, "教师只能为自己创建课程");
         }
 
         Course course = new Course();
@@ -59,14 +60,13 @@ public class CourseService {
         if (authService.isTeacher(actor)) {
             query.eq(Course::getTeacherId, actor.getId());
         }
-        query.orderByDesc(Course::getId);
-        return courseMapper.selectList(query);
+        return QueryHelper.descList(courseMapper, query, Course::getId);
     }
 
     public Course getById(Long courseId) {
         Course course = courseMapper.selectById(courseId);
         if (course == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Course not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "课程不存在");
         }
         return course;
     }

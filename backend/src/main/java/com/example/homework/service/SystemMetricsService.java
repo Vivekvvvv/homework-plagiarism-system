@@ -42,17 +42,17 @@ public class SystemMetricsService {
 
     public SystemMetricsView snapshot() {
         SystemMetricsView view = new SystemMetricsView();
-        view.setUserCount((int) sysUserMapper.selectCount(null));
-        view.setTeacherCount((int) sysUserMapper.selectCount(new LambdaQueryWrapper<SysUser>()
-            .eq(SysUser::getRole, "TEACHER")));
-        view.setStudentCount((int) sysUserMapper.selectCount(new LambdaQueryWrapper<SysUser>()
-            .eq(SysUser::getRole, "STUDENT")));
+        view.setUserCount(sysUserMapper.selectCount(null).intValue());
+        view.setTeacherCount(sysUserMapper.selectCount(new LambdaQueryWrapper<SysUser>()
+            .eq(SysUser::getRole, "TEACHER")).intValue());
+        view.setStudentCount(sysUserMapper.selectCount(new LambdaQueryWrapper<SysUser>()
+            .eq(SysUser::getRole, "STUDENT")).intValue());
 
-        view.setCourseCount((int) courseMapper.selectCount(null));
-        view.setAssignmentCount((int) assignmentMapper.selectCount(null));
-        view.setSubmissionCount((int) submissionMapper.selectCount(null));
-        view.setReviewCount((int) submissionReviewMapper.selectCount(null));
-        view.setPlagiarismTaskCount((int) plagiarismTaskMapper.selectCount(null));
+        view.setCourseCount(courseMapper.selectCount(null).intValue());
+        view.setAssignmentCount(assignmentMapper.selectCount(null).intValue());
+        view.setSubmissionCount(submissionMapper.selectCount(null).intValue());
+        view.setReviewCount(submissionReviewMapper.selectCount(null).intValue());
+        view.setPlagiarismTaskCount(plagiarismTaskMapper.selectCount(null).intValue());
 
         List<PlagiarismTask> tasks = plagiarismTaskMapper.selectList(new LambdaQueryWrapper<PlagiarismTask>()
             .orderByDesc(PlagiarismTask::getId)

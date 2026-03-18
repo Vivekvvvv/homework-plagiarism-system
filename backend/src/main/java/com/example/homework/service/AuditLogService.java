@@ -40,7 +40,7 @@ public class AuditLogService {
     }
 
     public List<AuditLog> list(String actorUsername, String action, Integer limit) {
-        int safeLimit = limit == null ? 100 : Math.min(Math.max(1, limit), 500);
+        int safeLimit = com.example.homework.common.QueryHelper.safeLimit(limit, 100, 500);
         LambdaQueryWrapper<AuditLog> query = new LambdaQueryWrapper<AuditLog>();
         if (StringUtils.hasText(actorUsername)) {
             query.eq(AuditLog::getActorUsername, actorUsername.trim());

@@ -1,0 +1,246 @@
+{
+  "annotations": {
+    "list": []
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 1,
+  "id": null,
+  "links": [],
+  "panels": [
+    {
+      "title": "JVM Memory Used",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "targets": [
+        {
+          "expr": "jvm_memory_used_bytes{application=\"homework-backend\"}",
+          "legendFormat": "{{area}} - {{id}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        }
+      }
+    },
+    {
+      "title": "HTTP Request Rate",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application=\"homework-backend\"}[1m])",
+          "legendFormat": "{{method}} {{uri}} {{status}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps"
+        }
+      }
+    },
+    {
+      "title": "HTTP Request Duration (P95)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.95, rate(http_server_requests_seconds_bucket{application=\"homework-backend\"}[5m]))",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "JVM Threads",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "targets": [
+        {
+          "expr": "jvm_threads_live_threads{application=\"homework-backend\"}",
+          "legendFormat": "live"
+        },
+        {
+          "expr": "jvm_threads_daemon_threads{application=\"homework-backend\"}",
+          "legendFormat": "daemon"
+        },
+        {
+          "expr": "jvm_threads_peak_threads{application=\"homework-backend\"}",
+          "legendFormat": "peak"
+        }
+      ]
+    },
+    {
+      "title": "System CPU Usage",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 0, "y": 16 },
+      "targets": [
+        {
+          "expr": "system_cpu_usage{application=\"homework-backend\"}",
+          "legendFormat": "System CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.6 },
+              { "color": "red", "value": 0.85 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "Process CPU Usage",
+      "type": "gauge",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 6, "x": 6, "y": 16 },
+      "targets": [
+        {
+          "expr": "process_cpu_usage{application=\"homework-backend\"}",
+          "legendFormat": "Process CPU"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit",
+          "max": 1,
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.5 },
+              { "color": "red", "value": 0.8 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "DB Connection Pool",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 16 },
+      "targets": [
+        {
+          "expr": "hikaricp_connections_active{application=\"homework-backend\"}",
+          "legendFormat": "active"
+        },
+        {
+          "expr": "hikaricp_connections_idle{application=\"homework-backend\"}",
+          "legendFormat": "idle"
+        },
+        {
+          "expr": "hikaricp_connections{application=\"homework-backend\"}",
+          "legendFormat": "total"
+        }
+      ]
+    },
+    {
+      "title": "API Error Rate (5xx)",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 22 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_count{application=\"homework-backend\", status=~\"5..\"}[5m])",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "reqps",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.01 },
+              { "color": "red", "value": 0.1 }
+            ]
+          }
+        }
+      }
+    },
+    {
+      "title": "API Avg Latency by Endpoint",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 22 },
+      "targets": [
+        {
+          "expr": "rate(http_server_requests_seconds_sum{application=\"homework-backend\"}[5m]) / rate(http_server_requests_seconds_count{application=\"homework-backend\"}[5m])",
+          "legendFormat": "{{method}} {{uri}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Logback Error Count",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 30 },
+      "targets": [
+        {
+          "expr": "increase(logback_events_total{application=\"homework-backend\", level=\"error\"}[5m])",
+          "legendFormat": "errors / 5m"
+        },
+        {
+          "expr": "increase(logback_events_total{application=\"homework-backend\", level=\"warn\"}[5m])",
+          "legendFormat": "warnings / 5m"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "short"
+        }
+      }
+    },
+    {
+      "title": "HikariCP Connection Acquire Time",
+      "type": "timeseries",
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 30 },
+      "targets": [
+        {
+          "expr": "rate(hikaricp_connections_acquire_seconds_sum{application=\"homework-backend\"}[5m]) / rate(hikaricp_connections_acquire_seconds_count{application=\"homework-backend\"}[5m])",
+          "legendFormat": "avg acquire time"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s",
+          "thresholds": {
+            "steps": [
+              { "color": "green", "value": null },
+              { "color": "yellow", "value": 0.1 },
+              { "color": "red", "value": 0.5 }
+            ]
+          }
+        }
+      }
+    }
+  ],
+  "schemaVersion": 39,
+  "tags": ["homework", "spring-boot"],
+  "templating": { "list": [] },
+  "time": { "from": "now-1h", "to": "now" },
+  "title": "Homework Backend Dashboard",
+  "uid": "homework-backend",
+  "version": 1
+}

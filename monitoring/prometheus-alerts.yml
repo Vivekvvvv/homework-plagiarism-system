@@ -1,0 +1,42 @@
+groups:
+  - name: homework-backend-alerts
+    rules:
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_server_requests_seconds_count{application="homework-backend", status=~"5.."}[5m]))
+            /
+            sum(rate(http_server_requests_seconds_count{application="homework-backend"}[5m]))
+          ) > 0.01
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "5xx 错误率过高"
+          description: "5分钟内 5xx 错误率超过 1%，当前值 {{ $value | humanizePercentage }}"
+
+      - alert: HighLatencyP95
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_server_requests_seconds_bucket{application="homework-backend"}[5m])) by (le)
+          ) > 2.0
+        for: 3m
+        labels:
+          severity: warning
+        annotations:
+          summary: "P95 延迟过高"
+          description: "P95 响应延迟超过 2 秒，当前值 {{ $value | humanizeDuration }}"
+
+      - alert: JvmMemoryHigh
+        expr: |
+          (
+            sum(jvm_memory_used_bytes{application="homework-backend", area="heap"})
+            /
+            sum(jvm_memory_max_bytes{application="homework-backend", area="heap"})
+          ) > 0.80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "JVM 堆内存使用率过高"
+          description: "JVM 堆内存使用率超过 80%，当前值 {{ $value | humanizePercentage }}"

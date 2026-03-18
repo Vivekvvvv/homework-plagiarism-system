@@ -77,7 +77,7 @@ public class PlagiarismService {
         authzService.requireRoleIn(actor, UserRole.ADMIN, UserRole.TEACHER);
         PlagiarismTask task = getTaskByIdWithAccess(taskId, actor);
         if (task.getStatus() != null && (task.getStatus() == 0 || task.getStatus() == 1)) {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "Task is still pending or running");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "任务仍在等待或运行中");
         }
         PlagiarismTask retried = createTaskInternal(
             task.getAssignmentId(),
@@ -100,13 +100,13 @@ public class PlagiarismService {
         PlagiarismTask task = getTaskByIdWithAccess(taskId, actor);
         Integer status = task.getStatus();
         if (status != null && (status == 2 || status == 3 || status == 4)) {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "Task cannot be canceled in current status");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "当前状态下无法取消任务");
         }
         task.setStatus(4);
         task.setFinishedAt(LocalDateTime.now());
-        task.setErrorMessage("Canceled by user");
+        task.setErrorMessage("已被用户取消");
         plagiarismTaskMapper.updateById(task);
-        logTask(taskId, "CANCELED", "Task canceled by user");
+        logTask(taskId, "CANCELED", "任务已被用户取消");
         auditLogService.log(actor, AuditAction.PLAGIARISM_TASK_CANCEL.name(), "plagiarism_task",
             String.valueOf(taskId), null, "/api/v1/plagiarism/tasks/" + taskId + "/cancel", "PATCH");
         return task;
@@ -180,7 +180,7 @@ public class PlagiarismService {
         task.setCreatedAt(LocalDateTime.now());
         plagiarismTaskMapper.insert(task);
 
-        logTask(task.getId(), "CREATED", "Task created, waiting for async execution");
+        logTask(task.getId(), "CREATED", "任务已创建，等待异步执行");
         plagiarismTaskRunnerService.runTaskAsync(task.getId());
         return task;
     }
@@ -194,14 +194,10 @@ public class PlagiarismService {
 
     public PlagiarismTask latestTaskByAssignment(Long assignmentId, SysUser actor) {
         assignmentService.getByIdWithAccess(assignmentId, actor);
-        PlagiarismTask task = plagiarismTaskMapper.selectOne(new LambdaQueryWrapper<PlagiarismTask>()
+        return plagiarismTaskMapper.selectOne(new LambdaQueryWrapper<PlagiarismTask>()
             .eq(PlagiarismTask::getAssignmentId, assignmentId)
             .orderByDesc(PlagiarismTask::getId)
             .last("LIMIT 1"));
-        if (task == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "No plagiarism task found for this assignment");
-        }
-        return task;
     }
 
     public PlagiarismTask getTaskById(Long taskId) {
@@ -209,7 +205,7 @@ public class PlagiarismService {
             .eq(PlagiarismTask::getId, taskId)
             .last("LIMIT 1"));
         if (task == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Plagiarism task not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "查重任务不存在");
         }
         return task;
     }
@@ -256,7 +252,7 @@ public class PlagiarismService {
             .eq(PlagiarismPairResult::getId, pairId)
             .last("LIMIT 1"));
         if (pair == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Pair result not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "配对结果不存在");
         }
         getTaskByIdWithAccess(pair.getTaskId(), actor);
         return pair;
@@ -281,10 +277,10 @@ public class PlagiarismService {
                                                                   SysUser actor) {
         assignmentService.getByIdWithAccess(assignmentId, actor);
         if (startAt != null && endAt != null && startAt.isAfter(endAt)) {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "startAt cannot be later than endAt");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "起始时间不能晚于结束时间");
         }
 
-        int safeLimit = limitInput == null ? 20 : Math.min(Math.max(1, limitInput), 200);
+        int safeLimit = com.example.homework.common.QueryHelper.safeLimit(limitInput, 20, 200);
 
         LambdaQueryWrapper<PlagiarismTask> query = new LambdaQueryWrapper<PlagiarismTask>()
             .eq(PlagiarismTask::getAssignmentId, assignmentId);

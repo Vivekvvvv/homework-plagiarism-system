@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="login">
     <el-card class="login__card">
       <template #header>
@@ -59,15 +59,22 @@ const handleLogin = async () => {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: linear-gradient(130deg, #f2f6ff 0%, #eef7ff 40%, #f8f9ff 100%);
+  background:
+    radial-gradient(800px 400px at 30% 20%, rgba(79, 70, 229, 0.08), transparent 60%),
+    radial-gradient(600px 300px at 70% 80%, rgba(139, 92, 246, 0.06), transparent 50%),
+    linear-gradient(130deg, #f2f6ff 0%, #eef7ff 40%, #f8f9ff 100%);
 }
 
 .login__card {
   width: 420px;
+  border-radius: 20px;
+  box-shadow: 0 12px 40px rgba(15, 23, 42, 0.10), 0 4px 12px rgba(15, 23, 42, 0.04);
 }
 
 .login__title {
   font-weight: 700;
+  color: var(--app-accent, #4f46e5);
+  font-size: 18px;
 }
 
 .login__hint {

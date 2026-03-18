@@ -39,7 +39,7 @@ public class PerfBaselineService {
     }
 
     public List<PerfBaseline> list(Integer limit) {
-        int safeLimit = limit == null ? 50 : Math.min(Math.max(1, limit), 200);
+        int safeLimit = com.example.homework.common.QueryHelper.safeLimit(limit, 50, 200);
         return perfBaselineMapper.selectList(new LambdaQueryWrapper<PerfBaseline>()
             .orderByDesc(PerfBaseline::getGeneratedAt)
             .orderByDesc(PerfBaseline::getId)

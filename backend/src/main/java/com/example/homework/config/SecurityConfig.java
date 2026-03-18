@@ -48,20 +48,21 @@ public class SecurityConfig {
                     response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
                     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                     response.setContentType("application/json");
-                    ApiResponse<Void> body = ApiResponse.fail(ErrorCodes.UNAUTHORIZED, "Unauthorized");
+                    ApiResponse<Void> body = ApiResponse.fail(ErrorCodes.UNAUTHORIZED, "未授权，请先登录");
                     response.getWriter().write(new ObjectMapper().writeValueAsString(body));
                 })
                 .accessDeniedHandler((request, response, accessDeniedException) -> {
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                     response.setCharacterEncoding(StandardCharsets.UTF_8.name());
                     response.setContentType("application/json");
-                    ApiResponse<Void> body = ApiResponse.fail(ErrorCodes.FORBIDDEN, "Forbidden");
+                    ApiResponse<Void> body = ApiResponse.fail(ErrorCodes.FORBIDDEN, "禁止访问");
                     response.getWriter().write(new ObjectMapper().writeValueAsString(body));
                 })
             )
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info").permitAll()
+                .requestMatchers("/actuator/health", "/actuator/health/**", "/actuator/info", "/actuator/prometheus").permitAll()
                 .requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll()
+                .requestMatchers("/ws/**").permitAll()
                 .requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll()
                 .requestMatchers("/api/v1/auth/me").authenticated()
                 .requestMatchers("/api/v1/audit/**").hasAnyRole("ADMIN", "TEACHER")

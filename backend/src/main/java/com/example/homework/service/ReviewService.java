@@ -5,6 +5,7 @@ import com.example.homework.common.audit.AuditAction;
 import com.example.homework.common.exception.BusinessException;
 import com.example.homework.common.exception.ErrorCodes;
 import com.example.homework.domain.dto.AssignmentReviewRubricUpsertRequest;
+import com.example.homework.domain.dto.BatchReviewUpsertRequest;
 import com.example.homework.domain.dto.ReviewDimensionScoreRequest;
 import com.example.homework.domain.dto.ReviewRubricItemRequest;
 import com.example.homework.domain.dto.SubmissionReviewUpsertRequest;
@@ -67,6 +68,16 @@ public class ReviewService {
         this.authzService = authzService;
         this.auditLogService = auditLogService;
         this.notificationService = notificationService;
+    }
+
+    @Transactional(rollbackFor = Exception.class)
+    public List<SubmissionReview> batchUpsertReview(BatchReviewUpsertRequest request, SysUser actor) {
+        authzService.requireRoleIn(actor, UserRole.ADMIN, UserRole.TEACHER);
+        List<SubmissionReview> results = new ArrayList<>();
+        for (SubmissionReviewUpsertRequest item : request.getReviews()) {
+            results.add(upsertReview(item, actor));
+        }
+        return results;
     }
 
     @Transactional(rollbackFor = Exception.class)
@@ -209,22 +220,22 @@ public class ReviewService {
         view.setScore(safeScore);
 
         if (safeScore.compareTo(BigDecimal.valueOf(90)) >= 0) {
-            view.setLevel("Excellent");
+            view.setLevel("优秀");
             view.setSuggestion("结构完整、论证充分、表达规范，建议补充方法边界与实验局限性的讨论。");
             return view;
         }
         if (safeScore.compareTo(BigDecimal.valueOf(80)) >= 0) {
-            view.setLevel("Good");
+            view.setLevel("良好");
             view.setSuggestion("整体完成度较高，关键点覆盖较好，建议补充数据对比与结论支撑细节。");
             return view;
         }
         if (safeScore.compareTo(BigDecimal.valueOf(60)) >= 0) {
-            view.setLevel("Pass");
+            view.setLevel("及格");
             view.setSuggestion("基础内容完整，但深度与细节不足，建议加强实验分析与问题复盘。");
             return view;
         }
 
-        view.setLevel("Needs Improvement");
+        view.setLevel("需改进");
         view.setSuggestion("核心要求覆盖不足，建议先补齐关键功能并给出可验证结果，再完善文档表达。");
         return view;
     }
@@ -276,7 +287,7 @@ public class ReviewService {
             .eq(SubmissionReview::getSubmissionId, submissionId)
             .last("LIMIT 1"));
         if (review == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Review not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "评阅记录不存在");
         }
         return review;
     }

@@ -5,6 +5,7 @@ import com.example.homework.common.exception.BusinessException;
 import com.example.homework.common.exception.ErrorCodes;
 import com.example.homework.domain.entity.SysUser;
 import com.example.homework.domain.entity.UserNotification;
+import com.example.homework.mapper.SysUserMapper;
 import com.example.homework.mapper.UserNotificationMapper;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -16,9 +17,15 @@ import java.util.List;
 public class NotificationService {
 
     private final UserNotificationMapper userNotificationMapper;
+    private final SysUserMapper sysUserMapper;
+    private final NotificationWebSocketHandler webSocketHandler;
 
-    public NotificationService(UserNotificationMapper userNotificationMapper) {
+    public NotificationService(UserNotificationMapper userNotificationMapper,
+                               SysUserMapper sysUserMapper,
+                               NotificationWebSocketHandler webSocketHandler) {
         this.userNotificationMapper = userNotificationMapper;
+        this.sysUserMapper = sysUserMapper;
+        this.webSocketHandler = webSocketHandler;
     }
 
     public UserNotification createNotification(Long userId,
@@ -43,11 +50,22 @@ public class NotificationService {
         notification.setSourceId(shortText(sourceId, 64));
         notification.setCreatedAt(LocalDateTime.now());
         userNotificationMapper.insert(notification);
+
+        // Push via WebSocket (best-effort, never fails the main flow)
+        try {
+            SysUser targetUser = sysUserMapper.selectById(userId);
+            if (targetUser != null && targetUser.getUsername() != null) {
+                webSocketHandler.sendToUser(targetUser.getUsername(), notification);
+            }
+        } catch (Exception ignored) {
+            // WebSocket push failure should not affect notification creation
+        }
+
         return notification;
     }
 
     public List<UserNotification> list(SysUser actor, Integer status, Integer limit) {
-        int safeLimit = limit == null ? 50 : Math.min(Math.max(1, limit), 200);
+        int safeLimit = com.example.homework.common.QueryHelper.safeLimit(limit, 50, 200);
         LambdaQueryWrapper<UserNotification> query = new LambdaQueryWrapper<UserNotification>()
             .eq(UserNotification::getUserId, actor.getId())
             .orderByDesc(UserNotification::getId)

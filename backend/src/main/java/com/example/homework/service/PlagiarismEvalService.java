@@ -173,7 +173,7 @@ public class PlagiarismEvalService {
     }
 
     public List<PlagiarismEvalRun> listRuns(Integer limit) {
-        int safeLimit = limit == null ? 20 : Math.min(Math.max(1, limit), 200);
+        int safeLimit = com.example.homework.common.QueryHelper.safeLimit(limit, 20, 200);
         return plagiarismEvalRunMapper.selectList(new LambdaQueryWrapper<PlagiarismEvalRun>()
             .orderByDesc(PlagiarismEvalRun::getId)
             .last("LIMIT " + safeLimit));

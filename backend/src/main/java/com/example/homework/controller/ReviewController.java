@@ -2,6 +2,7 @@ package com.example.homework.controller;
 
 import com.example.homework.common.ApiResponse;
 import com.example.homework.domain.dto.AssignmentReviewRubricUpsertRequest;
+import com.example.homework.domain.dto.BatchReviewUpsertRequest;
 import com.example.homework.domain.dto.SubmissionReviewUpsertRequest;
 import com.example.homework.domain.entity.SubmissionReview;
 import com.example.homework.domain.vo.AssignmentReviewRubricView;
@@ -53,6 +54,13 @@ public class ReviewController {
                                                 Authentication authentication) {
         SysUser user = requireTeacherOrAdmin(authService, authzService, authentication);
         return ApiResponse.ok(reviewService.upsertReview(request, user));
+    }
+
+    @PostMapping("/batch")
+    public ApiResponse<List<SubmissionReview>> batchUpsert(@Valid @RequestBody BatchReviewUpsertRequest request,
+                                                           Authentication authentication) {
+        SysUser user = requireTeacherOrAdmin(authService, authzService, authentication);
+        return ApiResponse.ok(reviewService.batchUpsertReview(request, user));
     }
 
     @GetMapping

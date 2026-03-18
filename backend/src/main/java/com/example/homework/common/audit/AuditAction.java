@@ -12,5 +12,6 @@ public enum AuditAction {
     EVAL_CASE_CREATE,
     EVAL_RUN,
     FILE_UPLOAD,
-    FILE_DOWNLOAD
+    FILE_DOWNLOAD,
+    PASSWORD_CHANGE
 }

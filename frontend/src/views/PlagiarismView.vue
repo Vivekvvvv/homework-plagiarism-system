@@ -1,39 +1,39 @@
 <template>
-  <AppShell title="Plagiarism Tasks">
+  <AppShell title="查重任务">
     <el-row :gutter="16">
       <el-col :span="9">
         <el-card>
           <template #header>
-            <span>Create Task</span>
+            <span>创建任务</span>
           </template>
           <el-form :model="form" label-width="110px">
-            <el-form-item label="Assignment ID">
+            <el-form-item label="作业ID">
               <el-input-number v-model="form.assignmentId" :min="1" />
             </el-form-item>
-            <el-form-item label="Threshold">
+            <el-form-item label="阈值">
               <el-input-number v-model="form.threshold" :min="0.1" :max="1" :step="0.01" :precision="2" />
             </el-form-item>
-            <el-form-item label="SimHash Weight">
+            <el-form-item label="SimHash权重">
               <el-input-number v-model="form.simhashWeight" :min="0" :max="1" :step="0.05" :precision="2" />
             </el-form-item>
-            <el-form-item label="Jaccard Weight">
+            <el-form-item label="Jaccard权重">
               <el-input-number v-model="form.jaccardWeight" :min="0" :max="1" :step="0.05" :precision="2" />
             </el-form-item>
-            <el-form-item label="Max Retry">
+            <el-form-item label="最大重试">
               <el-input-number v-model="form.maxRetry" :min="0" :max="5" :step="1" />
             </el-form-item>
-            <el-form-item label="Timeout(s)">
+            <el-form-item label="超时(秒)">
               <el-input-number v-model="form.runTimeoutSeconds" :min="30" :max="900" :step="30" />
             </el-form-item>
-            <el-form-item label="Idempotency">
-              <el-input v-model="form.idempotencyKey" placeholder="optional key for dedupe" clearable />
+            <el-form-item label="幂等键">
+              <el-input v-model="form.idempotencyKey" placeholder="可选，用于去重" clearable />
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" :loading="creating" @click="createTask">Start</el-button>
+              <el-button type="primary" :loading="creating" @click="createTask">开始检测</el-button>
               <el-button v-if="routeFromDashboard" :loading="creating" @click="createTaskAndBackToDashboard">发起并返回工作台</el-button>
-              <el-button @click="loadTasks">Refresh</el-button>
-              <el-button :disabled="!canCancelTask" type="warning" plain @click="cancelCurrentTask">Cancel</el-button>
-              <el-button :disabled="!canRetryTask" type="primary" plain @click="retryCurrentTask">Retry</el-button>
+              <el-button @click="loadTasks">刷新</el-button>
+              <el-button :disabled="!canCancelTask" type="warning" plain @click="cancelCurrentTask">取消</el-button>
+              <el-button :disabled="!canRetryTask" type="primary" plain @click="retryCurrentTask">重试</el-button>
               <el-button v-if="routeFromDashboard" link type="primary" @click="backToDashboard">返回工作台</el-button>
             </el-form-item>
           </el-form>
@@ -41,19 +41,19 @@
 
         <el-card style="margin-top: 16px">
           <template #header>
-            <span>Task List</span>
+            <span>任务列表</span>
           </template>
           <el-table :data="taskTable" height="380" @row-click="selectTask">
-            <el-table-column prop="id" label="Task ID" width="86" />
-            <el-table-column prop="status" label="Status" width="88">
+            <el-table-column prop="id" label="任务ID" width="86" />
+            <el-table-column prop="status" label="状态" width="88">
               <template #default="{ row }">
                 {{ statusText(row.status) }}
               </template>
             </el-table-column>
-            <el-table-column prop="threshold" label="Threshold" width="100" />
-            <el-table-column prop="totalPairs" label="Pairs" width="80" />
-            <el-table-column prop="highRiskPairs" label="High" width="80" />
-            <el-table-column prop="errorMessage" label="Error">
+            <el-table-column prop="threshold" label="阈值" width="100" />
+            <el-table-column prop="totalPairs" label="配对数" width="80" />
+            <el-table-column prop="highRiskPairs" label="高风险" width="80" />
+            <el-table-column prop="errorMessage" label="错误信息">
               <template #default="{ row }">
                 <el-text v-if="row.errorMessage" type="danger" truncated>{{ row.errorMessage }}</el-text>
                 <span v-else>-</span>
@@ -66,24 +66,24 @@
       <el-col :span="15">
         <el-card style="margin-bottom: 16px">
           <template #header>
-            <span>Report Snapshot</span>
+            <span>报告快照</span>
           </template>
 
-          <el-empty v-if="!taskReport" description="Select a task to view report snapshot" />
+          <el-empty v-if="!taskReport" description="选择一个任务查看报告快照" />
           <template v-else>
             <el-row :gutter="12">
               <el-col :span="6">
-                <el-statistic title="Total Pairs" :value="taskReport.totalPairs || 0" />
+                <el-statistic title="总配对数" :value="taskReport.totalPairs || 0" />
               </el-col>
               <el-col :span="6">
-                <el-statistic title="High Risk" :value="taskReport.highRiskPairs || 0" />
+                <el-statistic title="高风险" :value="taskReport.highRiskPairs || 0" />
               </el-col>
               <el-col :span="6">
-                <el-statistic title="Threshold" :value="taskReport.threshold || 0" :precision="4" />
+                <el-statistic title="阈值" :value="taskReport.threshold || 0" :precision="4" />
               </el-col>
               <el-col :span="6">
                 <div class="status-box">
-                  <div class="status-title">Status</div>
+                  <div class="status-title">状态</div>
                   <StatusTag :type="statusTagType(taskReport.status)" :label="statusText(taskReport.status)" />
                 </div>
               </el-col>
@@ -91,38 +91,38 @@
 
             <el-divider />
             <div class="trend-meta">
-              <span>Algorithm: {{ taskReport.algorithm || "-" }}</span>
-              <span>Weights: {{ taskReport.simhashWeight ?? "-" }} / {{ taskReport.jaccardWeight ?? "-" }}</span>
-              <span>Retry: {{ taskReport.retryCount ?? 0 }} / {{ taskReport.maxRetry ?? 0 }}</span>
-              <span>Timeout: {{ taskReport.runTimeoutSeconds ?? "-" }}s</span>
+              <span>算法：{{ taskReport.algorithm || "-" }}</span>
+              <span>权重：{{ taskReport.simhashWeight ?? "-" }} / {{ taskReport.jaccardWeight ?? "-" }}</span>
+              <span>重试：{{ taskReport.retryCount ?? 0 }} / {{ taskReport.maxRetry ?? 0 }}</span>
+              <span>超时：{{ taskReport.runTimeoutSeconds ?? "-" }}秒</span>
             </div>
 
             <div class="risk-line">
-              <span>Low ({{ taskReport.lowRiskCount || 0 }})</span>
+              <span>低风险 ({{ taskReport.lowRiskCount || 0 }})</span>
               <el-progress :percentage="riskPercent(taskReport.lowRiskCount || 0)" status="success" />
             </div>
             <div class="risk-line">
-              <span>Medium ({{ taskReport.mediumRiskCount || 0 }})</span>
+              <span>中风险 ({{ taskReport.mediumRiskCount || 0 }})</span>
               <el-progress :percentage="riskPercent(taskReport.mediumRiskCount || 0)" />
             </div>
             <div class="risk-line">
-              <span>High ({{ taskReport.highRiskCount || 0 }})</span>
+              <span>高风险 ({{ taskReport.highRiskCount || 0 }})</span>
               <el-progress :percentage="riskPercent(taskReport.highRiskCount || 0)" status="exception" />
             </div>
 
             <el-divider />
 
             <el-table :data="taskReport.topPairs || []" height="180" size="small" border>
-              <el-table-column prop="id" label="Top Pair ID" width="98" />
-              <el-table-column prop="submissionAId" label="A" width="72" />
-              <el-table-column prop="submissionBId" label="B" width="72" />
-              <el-table-column prop="similarity" label="Similarity" width="98" />
-              <el-table-column prop="riskLevel" label="Risk" width="82">
+              <el-table-column prop="id" label="配对ID" width="98" />
+              <el-table-column prop="submissionAId" label="提交A" width="72" />
+              <el-table-column prop="submissionBId" label="提交B" width="72" />
+              <el-table-column prop="similarity" label="相似度" width="98" />
+              <el-table-column prop="riskLevel" label="风险" width="82">
                 <template #default="{ row }">
                   <StatusTag :type="riskTagType(row.riskLevel)" :label="riskText(row.riskLevel)" />
                 </template>
               </el-table-column>
-              <el-table-column prop="hammingDistance" label="Hamming" width="96" />
+              <el-table-column prop="hammingDistance" label="汉明距离" width="96" />
             </el-table>
           </template>
         </el-card>
@@ -131,11 +131,11 @@
           <template #header>
             <div class="header-row">
               <div class="header-left">
-                <span>Results (Task {{ currentTaskId || "-" }})</span>
-                <el-select v-model="filters.riskLevel" clearable placeholder="Risk" style="width: 110px">
-                  <el-option :value="1" label="Low" />
-                  <el-option :value="2" label="Medium" />
-                  <el-option :value="3" label="High" />
+                <span>检测结果（任务 {{ currentTaskId || "-" }}）</span>
+                <el-select v-model="filters.riskLevel" clearable placeholder="风险等级" style="width: 110px">
+                  <el-option :value="1" label="低风险" />
+                  <el-option :value="2" label="中风险" />
+                  <el-option :value="3" label="高风险" />
                 </el-select>
                 <el-input-number
                   v-model="filters.minSimilarity"
@@ -143,11 +143,11 @@
                   :max="1"
                   :step="0.01"
                   :precision="2"
-                  placeholder="Min Sim."
+                  placeholder="最小相似度"
                 />
-                <el-button :disabled="!currentTaskId" @click="applyFilters">Apply</el-button>
-                <el-button :disabled="!currentTaskId" @click="exportCsv">Export CSV</el-button>
-                <el-button :disabled="!form.assignmentId" @click="exportAssignmentReport">Export Report</el-button>
+                <el-button :disabled="!currentTaskId" @click="applyFilters">筛选</el-button>
+                <el-button :disabled="!currentTaskId" @click="exportCsv">导出CSV</el-button>
+                <el-button :disabled="!form.assignmentId" @click="exportAssignmentReport">导出报告</el-button>
               </div>
               <StatusTag
                 v-if="currentTaskStatus !== null"
@@ -159,18 +159,18 @@
 
           <el-table :data="pairTable" border @row-click="openPairDetail">
             <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column prop="submissionAId" label="A" width="80" />
-            <el-table-column prop="submissionBId" label="B" width="80" />
-            <el-table-column prop="similarity" label="Similarity" width="110" />
+            <el-table-column prop="submissionAId" label="提交A" width="80" />
+            <el-table-column prop="submissionBId" label="提交B" width="80" />
+            <el-table-column prop="similarity" label="相似度" width="110" />
             <el-table-column prop="simhashSimilarity" label="SimHash" width="100" />
             <el-table-column prop="jaccardSimilarity" label="Jaccard" width="100" />
-            <el-table-column prop="hammingDistance" label="Hamming" width="110" />
-            <el-table-column prop="riskLevel" label="Risk" width="90">
+            <el-table-column prop="hammingDistance" label="汉明距离" width="110" />
+            <el-table-column prop="riskLevel" label="风险" width="90">
               <template #default="{ row }">
                 <StatusTag :type="riskTagType(row.riskLevel)" :label="riskText(row.riskLevel)" />
               </template>
             </el-table-column>
-            <el-table-column prop="pairKey" label="PairKey" />
+            <el-table-column prop="pairKey" label="配对键" />
           </el-table>
 
           <div class="pager">
@@ -189,27 +189,27 @@
 
         <el-card style="margin-top: 16px">
           <template #header>
-            <span>Task Logs</span>
+            <span>任务日志</span>
           </template>
           <el-table :data="taskLogs" height="220" border>
-            <el-table-column prop="createdAt" label="Time" width="180" />
-            <el-table-column prop="phase" label="Phase" width="120">
+            <el-table-column prop="createdAt" label="时间" width="180" />
+            <el-table-column prop="phase" label="阶段" width="120">
               <template #default="{ row }">
                 <StatusTag :type="phaseTagType(row.phase)" :label="phaseText(row.phase)" />
               </template>
             </el-table-column>
-            <el-table-column prop="message" label="Message" />
+            <el-table-column prop="message" label="消息" />
           </el-table>
         </el-card>
 
         <el-card style="margin-top: 16px">
           <template #header>
             <div class="trend-header">
-              <span>Assignment Trend</span>
+              <span>作业趋势</span>
               <div class="trend-actions">
-                <el-button size="small" :disabled="trendRows.length === 0" @click="exportTrendCsv">Export Trend CSV</el-button>
-                <el-button size="small" :disabled="trendRows.length === 0" @click="exportTrendPng">Export Trend PNG</el-button>
-                <el-button size="small" :disabled="trendRows.length === 0" @click="exportDefensePdf">Export PDF Report</el-button>
+                <el-button size="small" :disabled="trendRows.length === 0" @click="exportTrendCsv">导出趋势CSV</el-button>
+                <el-button size="small" :disabled="trendRows.length === 0" @click="exportTrendPng">导出趋势PNG</el-button>
+                <el-button size="small" :disabled="trendRows.length === 0" @click="exportDefensePdf">导出PDF报告</el-button>
               </div>
             </div>
           </template>
@@ -218,19 +218,19 @@
               v-model="trendFilter.range"
               type="datetimerange"
               value-format="YYYY-MM-DDTHH:mm:ss"
-              range-separator="to"
-              start-placeholder="Start Time"
-              end-placeholder="End Time"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
               :clearable="true"
             />
             <el-input-number v-model="trendFilter.limit" :min="1" :max="200" :step="10" />
-            <el-button @click="applyTrendFilter">Apply Range</el-button>
-            <el-button @click="resetTrendFilter">Reset</el-button>
+            <el-button @click="applyTrendFilter">应用筛选</el-button>
+            <el-button @click="resetTrendFilter">重置</el-button>
           </div>
           <div class="trend-meta">
-            <span>Range: {{ trendRangeText }}</span>
-            <span>Limit: {{ trendFilter.limit }}</span>
-            <span>Points: {{ trendRows.length }}</span>
+            <span>范围：{{ trendRangeText }}</span>
+            <span>限制：{{ trendFilter.limit }}</span>
+            <span>数据点：{{ trendRows.length }}</span>
           </div>
           <div v-if="trendRows.length > 0" class="trend-chart-wrap">
             <svg :viewBox="`0 0 ${trendChartWidth} ${trendChartHeight}`" class="trend-chart" role="img">
@@ -289,43 +289,43 @@
               </text>
             </svg>
           </div>
-          <el-empty v-else description="No trend data" />
+          <el-empty v-else description="暂无趋势数据" />
 
           <el-table :data="trendRows" height="220" border size="small">
-            <el-table-column prop="taskId" label="Task ID" width="90" />
-            <el-table-column prop="status" label="Status" width="100">
+            <el-table-column prop="taskId" label="任务ID" width="90" />
+            <el-table-column prop="status" label="状态" width="100">
               <template #default="{ row }">
                 <StatusTag :type="statusTagType(row.status)" :label="statusText(row.status)" />
               </template>
             </el-table-column>
-            <el-table-column prop="totalPairs" label="Pairs" width="88" />
-            <el-table-column prop="highRiskPairs" label="High" width="88" />
-            <el-table-column label="High Risk Rate" width="120">
+            <el-table-column prop="totalPairs" label="配对数" width="88" />
+            <el-table-column prop="highRiskPairs" label="高风险" width="88" />
+            <el-table-column label="高风险率" width="120">
               <template #default="{ row }">
                 {{ trendRiskPercent(row.highRiskRate) }}%
               </template>
             </el-table-column>
-            <el-table-column prop="createdAt" label="Created At" />
+            <el-table-column prop="createdAt" label="创建时间" />
           </el-table>
         </el-card>
       </el-col>
     </el-row>
 
-    <el-drawer v-model="detailVisible" title="Pair Detail" size="40%">
+    <el-drawer v-model="detailVisible" title="配对详情" size="40%">
       <template v-if="pairDetail">
-        <p><strong>Pair ID:</strong> {{ pairDetail.id }}</p>
-        <p><strong>Fused Similarity:</strong> {{ pairDetail.similarity }}</p>
-        <p><strong>SimHash Similarity:</strong> {{ pairDetail.simhashSimilarity ?? "-" }}</p>
-        <p><strong>Jaccard Similarity:</strong> {{ pairDetail.jaccardSimilarity ?? "-" }}</p>
-        <p><strong>Hamming Distance:</strong> {{ pairDetail.hammingDistance }}</p>
-        <p><strong>Risk:</strong> {{ riskText(pairDetail.riskLevel) }}</p>
-        <p><strong>Reason:</strong> {{ explainInfo.riskReason || "-" }}</p>
-        <p><strong>Threshold:</strong> {{ explainInfo.threshold ?? "-" }}</p>
-        <p><strong>Overlap Tokens:</strong></p>
+        <p><strong>配对ID：</strong> {{ pairDetail.id }}</p>
+        <p><strong>融合相似度：</strong> {{ pairDetail.similarity }}</p>
+        <p><strong>SimHash相似度：</strong> {{ pairDetail.simhashSimilarity ?? "-" }}</p>
+        <p><strong>Jaccard相似度：</strong> {{ pairDetail.jaccardSimilarity ?? "-" }}</p>
+        <p><strong>汉明距离：</strong> {{ pairDetail.hammingDistance }}</p>
+        <p><strong>风险等级：</strong> {{ riskText(pairDetail.riskLevel) }}</p>
+        <p><strong>原因：</strong> {{ explainInfo.riskReason || "-" }}</p>
+        <p><strong>阈值：</strong> {{ explainInfo.threshold ?? "-" }}</p>
+        <p><strong>重叠词元：</strong></p>
         <el-tag v-for="token in explainInfo.overlapTokens || []" :key="`token-${token}`" class="frag-tag">{{ token }}</el-tag>
         <el-divider />
-        <p><strong>Matched Fragments</strong></p>
-        <el-empty v-if="matchedFragments.length === 0" description="No fragments" />
+        <p><strong>匹配片段</strong></p>
+        <el-empty v-if="matchedFragments.length === 0" description="无匹配片段" />
         <el-tag v-for="item in matchedFragments" :key="item" class="frag-tag">{{ item }}</el-tag>
       </template>
     </el-drawer>
@@ -652,12 +652,12 @@ const createTask = async (options?: { backToDashboard?: boolean }) => {
       return;
     }
     resetPairState();
-    ElMessage.success("Task started in background");
+    ElMessage.success("任务已在后台启动");
     await loadTasks();
     await loadTaskReport();
     startPolling();
   } catch (error) {
-    notifyApiError(error, "Create task failed");
+    notifyApiError(error, "创建任务失败");
   } finally {
     creating.value = false;
   }
@@ -678,7 +678,7 @@ const loadTasks = async () => {
     currentTaskStatus.value = current?.status ?? null;
     await loadTrend();
   } catch (error) {
-    notifyApiError(error, "Load tasks failed");
+    notifyApiError(error, "加载任务失败");
   }
 };
 
@@ -694,7 +694,7 @@ const loadPairs = async () => {
     pairTable.value = res.data.records;
     pairPage.total = res.data.total;
   } catch (error) {
-    notifyApiError(error, "Load pairs failed");
+    notifyApiError(error, "加载配对失败");
   }
 };
 
@@ -707,7 +707,7 @@ const loadTaskLogs = async () => {
     const res = await plagiarismTaskLogsApi(currentTaskId.value);
     taskLogs.value = res.data;
   } catch (error) {
-    notifyApiError(error, "Load task logs failed");
+    notifyApiError(error, "加载日志失败");
   }
 };
 
@@ -720,7 +720,7 @@ const loadTaskReport = async () => {
     const res = await plagiarismTaskReportApi(currentTaskId.value);
     taskReport.value = res.data;
   } catch (error) {
-    notifyApiError(error, "Load task report failed");
+    notifyApiError(error, "加载报告失败");
   }
 };
 
@@ -740,7 +740,7 @@ const loadTrend = async () => {
     const res = await plagiarismAssignmentTrendApi(form.assignmentId, params);
     trendRows.value = res.data;
   } catch (error) {
-    notifyApiError(error, "Load trend failed");
+    notifyApiError(error, "加载趋势失败");
   }
 };
 
@@ -762,14 +762,14 @@ const cancelCurrentTask = async () => {
   if (!currentTaskId.value) return;
   try {
     await cancelPlagiarismTaskApi(currentTaskId.value);
-    ElMessage.success("Task canceled");
+    ElMessage.success("任务已取消");
     stopPolling();
     await loadTasks();
     await loadPairs();
     await loadTaskLogs();
     await loadTaskReport();
   } catch (error) {
-    notifyApiError(error, "Cancel failed");
+    notifyApiError(error, "取消失败");
   }
 };
 
@@ -780,13 +780,13 @@ const retryCurrentTask = async () => {
     currentTaskId.value = res.data.id;
     currentTaskStatus.value = res.data.status;
     resetPairState();
-    ElMessage.success("Retry task created");
+    ElMessage.success("重试任务已创建");
     await loadTasks();
     await loadTaskLogs();
     await loadTaskReport();
     startPolling();
   } catch (error) {
-    notifyApiError(error, "Retry failed");
+    notifyApiError(error, "重试失败");
   }
 };
 
@@ -814,7 +814,7 @@ const exportCsv = async () => {
     });
     downloadCsv(res.data, `plagiarism_task_${currentTaskId.value}.csv`);
   } catch (error) {
-    notifyApiError(error, "Export failed");
+    notifyApiError(error, "导出失败");
   }
 };
 
@@ -824,7 +824,7 @@ const exportAssignmentReport = async () => {
     const res = await exportAssignmentPlagiarismReportApi(form.assignmentId);
     downloadCsv(res.data, `assignment_${form.assignmentId}_plagiarism_report.csv`);
   } catch (error) {
-    notifyApiError(error, "Export report failed");
+    notifyApiError(error, "导出报告失败");
   }
 };
 
@@ -865,11 +865,11 @@ const buildTrendCanvas = (width = 1200, height = 640) => {
 
   ctx.fillStyle = "#303133";
   ctx.font = "600 28px sans-serif";
-  ctx.fillText(`Assignment ${form.assignmentId} Trend`, left, 40);
+  ctx.fillText(`作业 ${form.assignmentId} 查重趋势`, left, 40);
   ctx.font = "16px sans-serif";
   ctx.fillStyle = "#606266";
-  ctx.fillText(`Range: ${meta.startAt} ~ ${meta.endAt}`, left, 68);
-  ctx.fillText(`Limit: ${meta.limit} | Points: ${meta.points} | GeneratedAt: ${meta.generatedAt}`, left, 92);
+  ctx.fillText(`范围: ${meta.startAt} ~ ${meta.endAt}`, left, 68);
+  ctx.fillText(`限制: ${meta.limit} | 数据点: ${meta.points} | 生成时间: ${meta.generatedAt}`, left, 92);
 
   ctx.strokeStyle = "#c0c4cc";
   ctx.lineWidth = 1.5;
@@ -939,7 +939,7 @@ const buildTrendCanvas = (width = 1200, height = 640) => {
 
 const exportTrendCsv = () => {
   if (trendRows.value.length === 0) {
-    ElMessage.warning("No trend data to export");
+    ElMessage.warning("暂无趋势数据可导出");
     return;
   }
   const meta = buildTrendMeta();
@@ -974,12 +974,12 @@ const exportTrendCsv = () => {
 const exportTrendPng = () => {
   const canvas = buildTrendCanvas();
   if (!canvas) {
-    ElMessage.warning("No trend data to export");
+    ElMessage.warning("暂无趋势数据可导出");
     return;
   }
   canvas.toBlob((blob) => {
     if (!blob) {
-      ElMessage.error("Export PNG failed");
+      ElMessage.error("导出PNG失败");
       return;
     }
     downloadBlob(blob, `assignment_${form.assignmentId}_trend.png`);
@@ -989,7 +989,7 @@ const exportTrendPng = () => {
 const exportDefensePdf = async () => {
   const canvas = buildTrendCanvas(1400, 760);
   if (!canvas) {
-    ElMessage.warning("No trend data to export");
+    ElMessage.warning("暂无趋势数据可导出");
     return;
   }
 
@@ -1017,27 +1017,27 @@ const exportDefensePdf = async () => {
     y += size >= 12 ? 7 : 5.5;
   };
 
-  line(`Assignment ${form.assignmentId} Defense Report`, 16, true);
-  line(`GeneratedAt: ${meta.generatedAt}`);
-  line(`Range: ${meta.startAt} ~ ${meta.endAt}`);
-  line(`Limit: ${meta.limit}, Points: ${meta.points}`);
-  line(`CurrentTask: ${currentTaskId.value ?? "-"}`);
+  line(`作业 ${form.assignmentId} 查重分析报告`, 16, true);
+  line(`生成时间: ${meta.generatedAt}`);
+  line(`范围: ${meta.startAt} ~ ${meta.endAt}`);
+  line(`限制: ${meta.limit}, 数据点: ${meta.points}`);
+  line(`当前任务: ${currentTaskId.value ?? "-"}`);
   y += 2;
 
-  line("Snapshot", 12, true);
+  line("报告快照", 12, true);
   if (!taskReport.value) {
-    line("No task snapshot available.");
+    line("暂无任务快照。");
   } else {
-    line(`TaskId: ${taskReport.value.taskId}, Status: ${statusText(taskReport.value.status)}`);
-    line(`Threshold: ${taskReport.value.threshold}, TotalPairs: ${taskReport.value.totalPairs ?? 0}`);
-    line(`HighRiskPairs: ${taskReport.value.highRiskPairs ?? 0}`);
+    line(`任务ID: ${taskReport.value.taskId}, 状态: ${statusText(taskReport.value.status)}`);
+    line(`阈值: ${taskReport.value.threshold}, 总配对数: ${taskReport.value.totalPairs ?? 0}`);
+    line(`高风险配对数: ${taskReport.value.highRiskPairs ?? 0}`);
     line(
-      `RiskDistribution => Low:${taskReport.value.lowRiskCount ?? 0}, Medium:${taskReport.value.mediumRiskCount ?? 0}, High:${taskReport.value.highRiskCount ?? 0}`
+      `风险分布 => 低:${taskReport.value.lowRiskCount ?? 0}, 中:${taskReport.value.mediumRiskCount ?? 0}, 高:${taskReport.value.highRiskCount ?? 0}`
     );
   }
 
   y += 2;
-  line("Trend Chart", 12, true);
+  line("趋势图表", 12, true);
   const imgWidth = 182;
   const imgHeight = (canvas.height / canvas.width) * imgWidth;
   ensureSpace(imgHeight + 4);
@@ -1045,11 +1045,11 @@ const exportDefensePdf = async () => {
   y += imgHeight + 4;
 
   if (taskReport.value?.topPairs?.length) {
-    line("Top Risky Pairs (Top 8)", 12, true);
+    line("高风险配对 (前8)", 12, true);
     const top = taskReport.value.topPairs.slice(0, 8);
     top.forEach((pair, idx) => {
       line(
-        `${idx + 1}. Pair#${pair.id} A:${pair.submissionAId} B:${pair.submissionBId} Sim:${pair.similarity} Risk:${riskText(pair.riskLevel)} Ham:${pair.hammingDistance}`
+        `${idx + 1}. 配对#${pair.id} A:${pair.submissionAId} B:${pair.submissionBId} 相似度:${pair.similarity} 风险:${riskText(pair.riskLevel)} 汉明:${pair.hammingDistance}`
       );
     });
   }
@@ -1074,7 +1074,7 @@ const openPairDetail = async (row: PairRow) => {
     pairDetail.value = res.data;
     detailVisible.value = true;
   } catch (error) {
-    notifyApiError(error, "Load detail failed");
+    notifyApiError(error, "加载详情失败");
   }
 };
 

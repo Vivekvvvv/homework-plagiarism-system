@@ -17,6 +17,7 @@
     "vue-tsc": "^3.2.4"
   },
   "dependencies": {
+    "@sentry/vue": "^8.55.0",
     "axios": "^1.13.5",
     "element-plus": "^2.13.2",
     "jspdf": "^2.5.2",

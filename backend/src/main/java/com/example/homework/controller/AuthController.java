@@ -2,6 +2,7 @@ package com.example.homework.controller;
 
 import com.example.homework.common.ApiResponse;
 import com.example.homework.domain.dto.AuthLoginRequest;
+import com.example.homework.domain.dto.ChangePasswordRequest;
 import com.example.homework.domain.entity.SysUser;
 import com.example.homework.domain.vo.AuthLoginResponse;
 import com.example.homework.service.AuthService;
@@ -31,5 +32,13 @@ public class AuthController {
     @GetMapping("/me")
     public ApiResponse<SysUser> me(Authentication authentication) {
         return ApiResponse.ok(authService.getCurrentUser(authentication.getName()));
+    }
+
+    @PostMapping("/change-password")
+    public ApiResponse<Void> changePassword(@Valid @RequestBody ChangePasswordRequest request,
+                                             Authentication authentication) {
+        SysUser currentUser = authService.getCurrentUser(authentication);
+        authService.changePassword(currentUser, request);
+        return ApiResponse.ok();
     }
 }

@@ -11,6 +11,7 @@ import com.example.homework.domain.vo.AnalyticsOverviewView;
 import com.example.homework.domain.vo.AssignmentStatsView;
 import com.example.homework.domain.vo.CourseStatsView;
 import com.example.homework.domain.vo.StudentStatsView;
+import com.example.homework.domain.vo.SubmissionTrendPointView;
 import com.example.homework.mapper.AssignmentMapper;
 import com.example.homework.mapper.PlagiarismTaskMapper;
 import com.example.homework.mapper.SubmissionMapper;
@@ -19,9 +20,12 @@ import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -202,6 +206,57 @@ public class AnalyticsService {
         overview.setAssignmentStats(assignmentStats);
         overview.setStudentStats(studentStats);
         return overview;
+    }
+
+    public List<SubmissionTrendPointView> submissionTrend(SysUser actor, int days) {
+        int safeDays = Math.min(Math.max(1, days), 90);
+        List<Course> courses = courseService.listAll(actor);
+        if (courses.isEmpty()) {
+            return fillEmptyDays(safeDays);
+        }
+
+        List<Long> courseIds = courses.stream().map(Course::getId).toList();
+        List<Assignment> assignments = assignmentMapper.selectList(new LambdaQueryWrapper<Assignment>()
+            .in(Assignment::getCourseId, courseIds));
+
+        if (assignments.isEmpty()) {
+            return fillEmptyDays(safeDays);
+        }
+
+        List<Long> assignmentIds = assignments.stream().map(Assignment::getId).toList();
+        LocalDateTime startTime = LocalDate.now().minusDays(safeDays - 1).atStartOfDay();
+        List<Submission> submissions = submissionMapper.selectList(new LambdaQueryWrapper<Submission>()
+            .in(Submission::getAssignmentId, assignmentIds)
+            .ge(Submission::getSubmitTime, startTime));
+
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        Map<String, Long> countMap = new LinkedHashMap<>();
+        for (Submission submission : submissions) {
+            String dateKey = submission.getSubmitTime().toLocalDate().format(formatter);
+            countMap.merge(dateKey, 1L, Long::sum);
+        }
+
+        List<SubmissionTrendPointView> result = new ArrayList<>();
+        for (int i = safeDays - 1; i >= 0; i--) {
+            String dateKey = LocalDate.now().minusDays(i).format(formatter);
+            SubmissionTrendPointView point = new SubmissionTrendPointView();
+            point.setDate(dateKey);
+            point.setCount(countMap.getOrDefault(dateKey, 0L));
+            result.add(point);
+        }
+        return result;
+    }
+
+    private List<SubmissionTrendPointView> fillEmptyDays(int days) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        List<SubmissionTrendPointView> result = new ArrayList<>();
+        for (int i = days - 1; i >= 0; i--) {
+            SubmissionTrendPointView point = new SubmissionTrendPointView();
+            point.setDate(LocalDate.now().minusDays(i).format(formatter));
+            point.setCount(0L);
+            result.add(point);
+        }
+        return result;
     }
 
     private int safeInt(Integer value) {

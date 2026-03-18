@@ -73,7 +73,7 @@ public class PlagiarismTaskRunnerService {
         task.setErrorMessage(null);
         task.setStartedAt(LocalDateTime.now());
         plagiarismTaskMapper.updateById(task);
-        logTask(taskId, "STARTED", "Task started");
+        logTask(taskId, "STARTED", "任务已启动");
 
         try {
             int[] stats = execute(task);
@@ -83,7 +83,7 @@ public class PlagiarismTaskRunnerService {
             task.setFinishedAt(LocalDateTime.now());
             task.setErrorMessage(null);
             plagiarismTaskMapper.updateById(task);
-            logTask(taskId, "SUCCEEDED", "Task completed: totalPairs=" + stats[0] + ", highRiskPairs=" + stats[1]);
+            logTask(taskId, "SUCCEEDED", "任务完成：总配对数=" + stats[0] + "，高风险配对数=" + stats[1]);
             String level = stats[1] > 0 ? "warning" : "success";
             notificationService.createNotification(
                 task.getCreatedBy(),
@@ -96,9 +96,9 @@ public class PlagiarismTaskRunnerService {
         } catch (TaskCanceledException ex) {
             task.setStatus(4);
             task.setFinishedAt(LocalDateTime.now());
-            task.setErrorMessage("Canceled by user");
+            task.setErrorMessage("已被用户取消");
             plagiarismTaskMapper.updateById(task);
-            logTask(taskId, "CANCELED", "Task canceled during execution");
+            logTask(taskId, "CANCELED", "执行期间任务被取消");
         } catch (Exception ex) {
             PlagiarismTask latest = plagiarismTaskMapper.selectById(taskId);
             if (latest != null && shouldRetry(latest)) {
@@ -109,7 +109,7 @@ public class PlagiarismTaskRunnerService {
                 latest.setFinishedAt(LocalDateTime.now());
                 plagiarismTaskMapper.updateById(latest);
 
-                logTask(taskId, "RETRY_SCHEDULED", "Retry " + nextRetry + "/" + latest.getMaxRetry() + ": " + shortMessage(ex.getMessage()));
+                logTask(taskId, "RETRY_SCHEDULED", "第 " + nextRetry + "/" + latest.getMaxRetry() + " 次重试：" + shortMessage(ex.getMessage()));
                 runTaskAsync(taskId);
                 return;
             }
@@ -144,10 +144,10 @@ public class PlagiarismTaskRunnerService {
         List<Submission> submissions = latestByStudent.values().stream().toList();
 
         if (submissions.size() < 2) {
-            logTask(task.getId(), "RUNNING", "Skipped pair matching: valid submissions < 2");
+            logTask(task.getId(), "RUNNING", "有效提交不足2份，跳过配对匹配");
             return new int[]{0, 0};
         }
-        logTask(task.getId(), "RUNNING", "Start pair matching for " + submissions.size() + " submissions");
+        logTask(task.getId(), "RUNNING", "开始对 " + submissions.size() + " 份提交进行配对匹配");
 
         List<Long> submissionIds = submissions.stream().map(Submission::getId).toList();
         List<SubmissionText> textList = submissionTextMapper.selectList(new LambdaQueryWrapper<SubmissionText>()
@@ -255,15 +255,15 @@ public class PlagiarismTaskRunnerService {
 
     private String riskReason(int riskLevel, BigDecimal fusedSimilarity, BigDecimal threshold) {
         if (riskLevel == 3) {
-            return "Fused similarity significantly exceeds threshold";
+            return "融合相似度显著超出阈值";
         }
         if (riskLevel == 2) {
-            return "Fused similarity is near or above threshold";
+            return "融合相似度接近或超过阈值";
         }
         if (fusedSimilarity.compareTo(threshold.subtract(BigDecimal.valueOf(0.05)).max(BigDecimal.ZERO)) >= 0) {
-            return "Similarity is below threshold but close";
+            return "相似度低于阈值但接近";
         }
-        return "Similarity is safely below threshold";
+        return "相似度安全低于阈值";
     }
 
     private List<String> overlapTokens(String textA, String textB) {
@@ -372,7 +372,7 @@ public class PlagiarismTaskRunnerService {
 
     private String shortMessage(String msg) {
         if (!StringUtils.hasText(msg)) {
-            return "Task execution failed";
+            return "任务执行失败";
         }
         String cleaned = msg.replaceAll("\\s+", " ").trim();
         return cleaned.length() > 480 ? cleaned.substring(0, 480) : cleaned;

@@ -25,6 +25,33 @@
         </el-col>
       </el-row>
 
+      <el-row :gutter="16" class="dashboard__row" v-if="trendPoints.length > 0">
+        <el-col :span="24">
+          <el-card>
+            <template #header>
+              <div class="panel-header">
+                <span>7 天提交趋势</span>
+                <el-tag type="info">{{ trendPoints.reduce((s, p) => s + p.count, 0) }} 次提交</el-tag>
+              </div>
+            </template>
+            <svg class="trend-chart" viewBox="0 0 760 200" preserveAspectRatio="xMidYMid meet">
+              <line v-for="i in 4" :key="`grid-${i}`" :x1="60" :x2="740" :y1="20 + (i - 1) * 50" :y2="20 + (i - 1) * 50" stroke="#e5e7eb" stroke-dasharray="4 2" />
+              <text v-for="(point, idx) in trendPoints" :key="`label-${idx}`" :x="trendX(idx)" y="195" text-anchor="middle" fill="#64748b" font-size="11">
+                {{ point.date.slice(5) }}
+              </text>
+              <text v-for="i in 4" :key="`yaxis-${i}`" x="52" :y="25 + (i - 1) * 50" text-anchor="end" fill="#64748b" font-size="11">
+                {{ Math.round(trendMaxCount * (4 - i + 1) / 4) }}
+              </text>
+              <polygon :points="trendAreaPoints" fill="rgba(64,158,255,0.12)" />
+              <polyline :points="trendLinePoints" fill="none" stroke="#409eff" stroke-width="2.5" stroke-linejoin="round" />
+              <circle v-for="(point, idx) in trendPoints" :key="`dot-${idx}`" :cx="trendX(idx)" :cy="trendY(point.count)" r="4" fill="#409eff" stroke="#fff" stroke-width="2">
+                <title>{{ point.date }}：{{ point.count }} 次提交</title>
+              </circle>
+            </svg>
+          </el-card>
+        </el-col>
+      </el-row>
+
       <el-row :gutter="16" class="dashboard__row">
         <el-col :span="16">
           <el-card class="dashboard-hero">
@@ -388,6 +415,7 @@ import {
   listSubmissionsApi,
   markNotificationsReadApi,
   submissionReviewSummaryApi,
+  submissionTrendApi,
 } from "../api/modules";
 import { readOptionalPositiveIntQuery, readPositiveIntQuery, readStringQuery } from "../router/query";
 import { notifyApiError } from "../utils/notify";
@@ -420,6 +448,7 @@ const optimisticHandledAssignmentId = ref<number | null>(null);
 const optimisticHandledLabel = ref("");
 const optimisticHandledTimer = ref<ReturnType<typeof setTimeout> | null>(null);
 const quickPlagiarismLoading = ref<Record<number, boolean>>({});
+const trendPoints = ref<Array<{ date: string; count: number }>>([]);
 const userName = computed(() => resolveDashboardUserName(authStore.user));
 const dashboardRole = computed(() => resolveDashboardRole(authStore.user?.role));
 const systemStatus = resolveDashboardStatus();
@@ -524,6 +553,36 @@ const visibleTodos = computed(() => {
     return teacherSnapshot.value.todos;
   }
   return teacherSnapshot.value.todos.filter((todo) => todo.assignmentId !== optimisticHandledAssignmentId.value);
+});
+
+const trendMaxCount = computed(() => {
+  const max = trendPoints.value.reduce((m, p) => Math.max(m, p.count), 0);
+  return max > 0 ? max : 1;
+});
+
+const trendX = (idx: number) => {
+  const count = trendPoints.value.length || 1;
+  const margin = 60;
+  const width = 680;
+  return margin + (idx / Math.max(count - 1, 1)) * width;
+};
+
+const trendY = (count: number) => {
+  const maxY = trendMaxCount.value;
+  const topPad = 20;
+  const chartHeight = 150;
+  return topPad + chartHeight - (count / maxY) * chartHeight;
+};
+
+const trendLinePoints = computed(() =>
+  trendPoints.value.map((p, i) => `${trendX(i)},${trendY(p.count)}`).join(" ")
+);
+
+const trendAreaPoints = computed(() => {
+  if (trendPoints.value.length === 0) return "";
+  const first = `${trendX(0)},170`;
+  const last = `${trendX(trendPoints.value.length - 1)},170`;
+  return `${first} ${trendLinePoints.value} ${last}`;
 });
 
 const clearOptimisticHandledState = () => {
@@ -824,6 +883,15 @@ const loadDashboard = async () => {
   }
 };
 
+const loadTrend = async () => {
+  try {
+    const res = await submissionTrendApi(7);
+    trendPoints.value = Array.isArray(res.data) ? res.data : [];
+  } catch {
+    trendPoints.value = [];
+  }
+};
+
 const loadNotifications = async () => {
   try {
     const res = await listNotificationsApi({ limit: 30 });
@@ -873,6 +941,9 @@ watch(
     }
     await loadDashboard();
     await loadNotifications();
+    if (dashboardRole.value === "teacher") {
+      await loadTrend();
+    }
   },
   { immediate: true }
 );
@@ -1023,5 +1094,10 @@ onBeforeUnmount(() => {
   flex-wrap: wrap;
   color: #344054;
   font-size: 12px;
+}
+
+.trend-chart {
+  width: 100%;
+  max-height: 220px;
 }
 </style>

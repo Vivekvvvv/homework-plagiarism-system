@@ -26,11 +26,11 @@ type TrendChartData = {
 };
 
 export function statusText(status: number): string {
-  if (status === 2) return "Success";
-  if (status === 1) return "Running";
-  if (status === 3) return "Failed";
-  if (status === 4) return "Canceled";
-  return "Pending";
+  if (status === 2) return "成功";
+  if (status === 1) return "运行中";
+  if (status === 3) return "失败";
+  if (status === 4) return "已取消";
+  return "等待中";
 }
 
 export function statusTagType(status: number): "success" | "warning" | "danger" | "info" {
@@ -41,9 +41,9 @@ export function statusTagType(status: number): "success" | "warning" | "danger" 
 }
 
 export function riskText(riskLevel: number): string {
-  if (riskLevel === 3) return "High";
-  if (riskLevel === 2) return "Medium";
-  return "Low";
+  if (riskLevel === 3) return "高风险";
+  if (riskLevel === 2) return "中风险";
+  return "低风险";
 }
 
 export function riskTagType(riskLevel: number): "danger" | "warning" | "success" {
@@ -53,13 +53,13 @@ export function riskTagType(riskLevel: number): "danger" | "warning" | "success"
 }
 
 export function phaseText(phase: string): string {
-  if (phase === "CREATED") return "Created";
-  if (phase === "STARTED") return "Started";
-  if (phase === "RUNNING") return "Running";
-  if (phase === "SUCCEEDED") return "Succeeded";
-  if (phase === "FAILED") return "Failed";
-  if (phase === "CANCELED") return "Canceled";
-  if (phase === "RETRY_SCHEDULED") return "Retry Scheduled";
+  if (phase === "CREATED") return "已创建";
+  if (phase === "STARTED") return "已启动";
+  if (phase === "RUNNING") return "运行中";
+  if (phase === "SUCCEEDED") return "已成功";
+  if (phase === "FAILED") return "已失败";
+  if (phase === "CANCELED") return "已取消";
+  if (phase === "RETRY_SCHEDULED") return "等待重试";
   return phase;
 }
 

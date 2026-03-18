@@ -34,10 +34,10 @@ public class FileStorageService {
 
     public FileStorage save(MultipartFile file, Long uploadedBy) {
         if (file.isEmpty()) {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "File cannot be empty");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "文件不能为空");
         }
         if (file.getSize() > maxUploadBytes) {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "File too large");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "文件过大");
         }
 
         try {
@@ -57,7 +57,7 @@ public class FileStorageService {
             fileStorageMapper.insert(record);
             return record;
         } catch (IOException e) {
-            throw new BusinessException(ErrorCodes.INTERNAL_ERROR, "Failed to store file");
+            throw new BusinessException(ErrorCodes.INTERNAL_ERROR, "文件存储失败");
         }
     }
 
@@ -66,7 +66,7 @@ public class FileStorageService {
             .eq(FileStorage::getId, fileId)
             .last("LIMIT 1"));
         if (fileStorage == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "File not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "文件不存在");
         }
         return fileStorage;
     }
@@ -75,7 +75,7 @@ public class FileStorageService {
         try {
             return Files.readAllBytes(Path.of(fileStorage.getFilePath()));
         } catch (IOException e) {
-            throw new BusinessException(ErrorCodes.INTERNAL_ERROR, "Failed to read file");
+            throw new BusinessException(ErrorCodes.INTERNAL_ERROR, "文件读取失败");
         }
     }
 }

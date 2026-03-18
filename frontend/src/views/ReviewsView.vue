@@ -10,6 +10,9 @@
               <el-button type="primary" @click="reloadAll">查询</el-button>
               <el-button type="primary" plain @click="openRubricDialog">Rubric配置</el-button>
               <el-button :disabled="displayRows.length === 0" @click="exportReviewCsv">导出评阅CSV</el-button>
+              <el-button type="warning" :disabled="selectedRows.length === 0" @click="openBatchDialog">
+                批量打分 ({{ selectedRows.length }})
+              </el-button>
               <el-tag v-if="routeAssignmentId" type="primary">看板定位</el-tag>
               <el-tag v-if="pendingOnlyMode" type="warning">待评阅模式</el-tag>
               <el-button v-if="pendingOnlyMode" link type="primary" @click="switchToAllRows">查看全部</el-button>
@@ -34,7 +37,8 @@
           <template #header>
             <span>提交评阅列表</span>
           </template>
-          <el-table v-if="displayRows.length > 0" :data="displayRows" border stripe size="small">
+          <el-table v-if="displayRows.length > 0" :data="displayRows" border stripe size="small" @selection-change="handleSelectionChange">
+            <el-table-column type="selection" width="48" />
             <el-table-column prop="submissionId" label="提交ID" width="88" />
             <el-table-column prop="studentId" label="学生ID" width="90" />
             <el-table-column prop="versionNo" label="版本" width="80" />
@@ -143,6 +147,24 @@
         <el-button type="primary" :loading="savingRubric" @click="saveRubric">保存Rubric</el-button>
       </div>
     </el-dialog>
+
+    <el-dialog v-model="batchDialogVisible" title="批量打分" width="520px">
+      <el-alert type="info" :closable="false" style="margin-bottom: 16px">
+        将对选中的 {{ selectedRows.length }} 条提交统一打分。
+      </el-alert>
+      <el-form :model="batchForm" label-width="88px">
+        <el-form-item label="统一分数">
+          <el-input-number v-model="batchForm.score" :min="0" :max="100" :step="1" :precision="2" />
+        </el-form-item>
+        <el-form-item label="统一评语">
+          <el-input v-model="batchForm.comment" type="textarea" :rows="3" maxlength="1000" show-word-limit />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="batchDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="batchSaving" @click="saveBatchReview">确认批量打分</el-button>
+      </template>
+    </el-dialog>
   </AppShell>
 </template>
 
@@ -152,6 +174,7 @@ import { ElMessage } from "element-plus";
 import { useRoute, useRouter } from "vue-router";
 import AppShell from "../components/AppShell.vue";
 import {
+  batchUpsertReviewApi,
   exportSubmissionReviewsCsvApi,
   listSubmissionReviewsApi,
   reviewRubricApi,
@@ -183,6 +206,13 @@ const saving = ref(false);
 const rubricVisible = ref(false);
 const savingRubric = ref(false);
 const rubricItems = ref<RubricItem[]>([]);
+const selectedRows = ref<ReviewRow[]>([]);
+const batchDialogVisible = ref(false);
+const batchSaving = ref(false);
+const batchForm = reactive({
+  score: 60,
+  comment: "",
+});
 const route = useRoute();
 const router = useRouter();
 
@@ -375,6 +405,39 @@ const switchToAllRows = () => {
       pendingOnly: undefined,
     },
   });
+};
+
+const handleSelectionChange = (selection: ReviewRow[]) => {
+  selectedRows.value = selection;
+};
+
+const openBatchDialog = () => {
+  batchForm.score = 60;
+  batchForm.comment = "";
+  batchDialogVisible.value = true;
+};
+
+const saveBatchReview = async () => {
+  if (selectedRows.value.length === 0) {
+    ElMessage.warning("请先选择需要打分的提交记录");
+    return;
+  }
+  batchSaving.value = true;
+  try {
+    const reviews = selectedRows.value.map((row) => ({
+      submissionId: row.submissionId,
+      score: batchForm.score,
+      comment: batchForm.comment || undefined,
+    }));
+    await batchUpsertReviewApi(reviews);
+    batchDialogVisible.value = false;
+    ElMessage.success(`已批量评阅 ${reviews.length} 条提交`);
+    await reloadAll();
+  } catch (error) {
+    notifyApiError(error, "批量打分失败");
+  } finally {
+    batchSaving.value = false;
+  }
 };
 
 const saveReviewAndBackToDashboard = async () => {

@@ -1,6 +1,7 @@
 package com.example.homework.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.example.homework.common.QueryHelper;
 import com.example.homework.common.audit.AuditAction;
 import com.example.homework.common.exception.BusinessException;
 import com.example.homework.common.exception.ErrorCodes;
@@ -40,7 +41,7 @@ public class AssignmentService {
         authzService.requireRoleIn(actor, UserRole.ADMIN, UserRole.TEACHER);
         Course course = courseService.getById(request.getCourseId());
         if (authService.isTeacher(actor) && !actor.getId().equals(course.getTeacherId())) {
-            throw new BusinessException(ErrorCodes.FORBIDDEN, "Teacher can only create assignment for own course");
+            throw new BusinessException(ErrorCodes.FORBIDDEN, "教师只能为自己的课程创建作业");
         }
 
         Assignment assignment = new Assignment();
@@ -64,17 +65,17 @@ public class AssignmentService {
     public List<Assignment> listByCourseId(Long courseId, SysUser actor) {
         Course course = courseService.getById(courseId);
         if (authService.isTeacher(actor) && !actor.getId().equals(course.getTeacherId())) {
-            throw new BusinessException(ErrorCodes.FORBIDDEN, "Teacher can only view assignments of own course");
+            throw new BusinessException(ErrorCodes.FORBIDDEN, "教师只能查看自己课程的作业");
         }
-        return assignmentMapper.selectList(new LambdaQueryWrapper<Assignment>()
-            .eq(Assignment::getCourseId, courseId)
-            .orderByDesc(Assignment::getId));
+        return QueryHelper.descList(assignmentMapper,
+            new LambdaQueryWrapper<Assignment>().eq(Assignment::getCourseId, courseId),
+            Assignment::getId);
     }
 
     public Assignment getById(Long assignmentId) {
         Assignment assignment = assignmentMapper.selectById(assignmentId);
         if (assignment == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Assignment not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "作业不存在");
         }
         return assignment;
     }
@@ -87,10 +88,10 @@ public class AssignmentService {
         if (authService.isTeacher(actor)) {
             Course course = courseService.getById(assignment.getCourseId());
             if (!actor.getId().equals(course.getTeacherId())) {
-                throw new BusinessException(ErrorCodes.FORBIDDEN, "Teacher can only access assignments of own course");
+                throw new BusinessException(ErrorCodes.FORBIDDEN, "教师只能访问自己课程的作业");
             }
             return assignment;
         }
-        throw new BusinessException(ErrorCodes.FORBIDDEN, "Only admin or teacher can access assignment details");
+        throw new BusinessException(ErrorCodes.FORBIDDEN, "仅管理员或教师可查看作业详情");
     }
 }

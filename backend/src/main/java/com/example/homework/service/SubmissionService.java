@@ -90,7 +90,7 @@ public class SubmissionService {
             plainText = request.getRawText().trim();
             sourceType = 2;
         } else {
-            throw new BusinessException(ErrorCodes.BAD_REQUEST, "fileId and rawText cannot both be empty");
+            throw new BusinessException(ErrorCodes.BAD_REQUEST, "文件ID和原始文本不能同时为空");
         }
 
         int nextVersion = getNextVersion(request.getAssignmentId(), request.getStudentId());
@@ -175,7 +175,7 @@ public class SubmissionService {
     public List<SubmissionEvolutionPointView> listEvolution(Long assignmentId, Long studentId, SysUser actor) {
         ensureSubmissionAccess(assignmentId, actor);
         if (authService.isStudent(actor) && !actor.getId().equals(studentId)) {
-            throw new BusinessException(ErrorCodes.FORBIDDEN, "Students can only view their own submission evolution");
+            throw new BusinessException(ErrorCodes.FORBIDDEN, "学生只能查看自己的提交演化记录");
         }
 
         List<Submission> submissions = submissionMapper.selectList(new LambdaQueryWrapper<Submission>()
@@ -253,7 +253,7 @@ public class SubmissionService {
             .eq(SubmissionText::getSubmissionId, submissionId)
             .last("LIMIT 1"));
         if (text == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Submission text not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "提交文本不存在");
         }
         return text;
     }
@@ -263,7 +263,7 @@ public class SubmissionService {
             .eq(Submission::getId, submissionId)
             .last("LIMIT 1"));
         if (submission == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Submission not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "提交记录不存在");
         }
         ensureSubmissionAccess(submission.getAssignmentId(), actor);
         return submission;
@@ -274,7 +274,7 @@ public class SubmissionService {
             .eq(Assignment::getId, assignmentId)
             .last("LIMIT 1"));
         if (assignment == null) {
-            throw new BusinessException(ErrorCodes.NOT_FOUND, "Assignment not found");
+            throw new BusinessException(ErrorCodes.NOT_FOUND, "作业不存在");
         }
         return assignment;
     }
@@ -287,7 +287,7 @@ public class SubmissionService {
         if (authService.isTeacher(actor)) {
             Course course = courseService.getById(assignment.getCourseId());
             if (!actor.getId().equals(course.getTeacherId())) {
-                throw new BusinessException(ErrorCodes.FORBIDDEN, "Teacher can only access submissions of own course");
+                throw new BusinessException(ErrorCodes.FORBIDDEN, "教师只能访问自己课程的提交");
             }
             return;
         }

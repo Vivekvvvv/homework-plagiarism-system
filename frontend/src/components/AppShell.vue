@@ -3,7 +3,7 @@
     <el-aside class="shell__aside" width="232px">
       <div class="shell__logo">
         <div class="shell__logo-title">作业查重与评阅辅助系统</div>
-        <div class="shell__logo-subtitle">Homework Insight Suite</div>
+        <div class="shell__logo-subtitle">智能作业洞察平台</div>
       </div>
       <el-menu class="shell__menu" :default-active="activePath" router>
         <el-menu-item index="/dashboard">仪表盘</el-menu-item>
@@ -14,6 +14,7 @@
         <el-menu-item v-if="isTeacherOrAdmin" index="/reviews">评阅中心</el-menu-item>
         <el-menu-item v-if="isTeacherOrAdmin" index="/evaluation">评估与审计</el-menu-item>
         <el-menu-item v-if="isTeacherOrAdmin" index="/analytics">数据看板</el-menu-item>
+        <el-menu-item index="/change-password">修改密码</el-menu-item>
       </el-menu>
     </el-aside>
 
@@ -24,6 +25,10 @@
           <span class="shell__title-hint">实时协作 · 统一审计 · 数据可视</span>
         </div>
         <div class="shell__user">
+          <span class="shell__bell" @click="resetBadge" title="通知">
+            🔔
+            <span v-if="unreadBadge > 0" class="shell__badge">{{ unreadBadge > 99 ? '99+' : unreadBadge }}</span>
+          </span>
           <span class="shell__user-text">{{ userText }}</span>
           <el-button type="danger" size="small" plain @click="handleLogout">退出登录</el-button>
         </div>
@@ -36,9 +41,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from "vue";
+import { computed, onMounted, onBeforeUnmount } from "vue";
 import { useRoute, useRouter } from "vue-router";
+import { ElNotification } from "element-plus";
 import { useAuthStore } from "../stores/auth";
+import { connectWs, closeWs, unreadBadge, resetBadge, type WsNotification } from "../utils/ws";
 
 defineProps<{ title: string }>();
 
@@ -58,9 +65,29 @@ const userText = computed(() => {
 });
 
 const handleLogout = () => {
+  closeWs();
   authStore.logout();
   router.push("/login");
 };
+
+const handleWsNotification = (notification: WsNotification) => {
+  ElNotification({
+    title: notification.title || "新通知",
+    message: notification.content || "",
+    type: (notification.level as "success" | "warning" | "info" | "error") || "info",
+    duration: 4000,
+  });
+};
+
+onMounted(() => {
+  if (authStore.token) {
+    connectWs(handleWsNotification);
+  }
+});
+
+onBeforeUnmount(() => {
+  closeWs();
+});
 </script>
 
 <style scoped>
@@ -81,9 +108,10 @@ const handleLogout = () => {
 
 .shell__logo-title {
   font-weight: 700;
-  color: #0f172a;
+  color: var(--app-accent, #4f46e5);
   font-size: 15px;
   line-height: 1.3;
+  letter-spacing: 0.5px;
 }
 
 .shell__logo-subtitle {
@@ -137,6 +165,28 @@ const handleLogout = () => {
 .shell__user-text {
   font-size: 13px;
   color: #334155;
+}
+
+.shell__bell {
+  position: relative;
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
+}
+
+.shell__badge {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 8px;
+  background: #f56c6c;
+  color: #fff;
+  font-size: 10px;
+  line-height: 16px;
+  text-align: center;
 }
 
 .shell__main {

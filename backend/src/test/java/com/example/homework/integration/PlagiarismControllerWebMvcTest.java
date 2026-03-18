@@ -110,7 +110,7 @@ class PlagiarismControllerWebMvcTest {
                 .content("{}"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.code").value(400))
-            .andExpect(jsonPath("$.msg").value("Bad request parameters"));
+            .andExpect(jsonPath("$.msg").value("请求参数有误"));
     }
 
     @Test
