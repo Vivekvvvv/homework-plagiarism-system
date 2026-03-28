@@ -75,10 +75,77 @@
           <div class="shell__page-hint">实时协作 · 统一审计 · 数据可视</div>
         </div>
         <div class="shell__header-right">
-          <button class="shell__bell" @click="resetBadge" title="通知">
-            <span class="shell__bell-icon">🔔</span>
-            <span v-if="unreadBadge > 0" class="shell__badge">{{ unreadBadge > 99 ? '99+' : unreadBadge }}</span>
-          </button>
+          <!-- 通知铃铛 -->
+          <el-popover
+            v-model:visible="notifPanelVisible"
+            trigger="click"
+            placement="bottom-end"
+            :width="380"
+            popper-class="notif-popover"
+          >
+            <template #reference>
+              <button class="shell__bell" title="通知">
+                <span class="shell__bell-icon">🔔</span>
+                <span v-if="unreadBadge > 0" class="shell__badge">{{ unreadBadge > 99 ? '99+' : unreadBadge }}</span>
+              </button>
+            </template>
+
+            <!-- 通知面板 -->
+            <div class="notif-panel">
+              <div class="notif-panel__header">
+                <span class="notif-panel__title">通知消息</span>
+                <div class="notif-panel__actions">
+                  <el-button link size="small" @click="markAllRead">全部已读</el-button>
+                  <el-button link size="small" @click="loadNotifications">刷新</el-button>
+                </div>
+              </div>
+
+              <!-- 发布公告（仅 admin/teacher） -->
+              <div v-if="isTeacherOrAdmin" class="notif-panel__broadcast">
+                <el-divider content-position="left"><span style="font-size:12px">发布公告</span></el-divider>
+                <el-input v-model="broadcastForm.title" placeholder="公告标题" size="small" style="margin-bottom:6px" />
+                <el-input v-model="broadcastForm.content" type="textarea" placeholder="公告内容（可选）" size="small" :rows="2" style="margin-bottom:6px" />
+                <div style="display:flex;gap:6px;align-items:center">
+                  <el-select v-model="broadcastForm.level" size="small" style="width:90px">
+                    <el-option label="普通" value="info" />
+                    <el-option label="警告" value="warning" />
+                    <el-option label="紧急" value="danger" />
+                    <el-option label="成功" value="success" />
+                  </el-select>
+                  <el-select v-model="broadcastForm.target" size="small" style="width:90px">
+                    <el-option label="全体" value="all" />
+                    <el-option label="学生" value="student" />
+                    <el-option label="教师" value="teacher" />
+                  </el-select>
+                  <el-button type="primary" size="small" :loading="broadcasting" @click="sendBroadcast">发布</el-button>
+                </div>
+              </div>
+
+              <el-divider style="margin:8px 0" />
+
+              <!-- 通知列表 -->
+              <div v-if="notifLoading" style="text-align:center;padding:16px">
+                <el-icon class="is-loading"><Loading /></el-icon>
+              </div>
+              <div v-else-if="notifications.length === 0" style="text-align:center;color:#aaa;padding:16px;font-size:13px">暂无通知</div>
+              <div v-else class="notif-list">
+                <div
+                  v-for="n in notifications"
+                  :key="n.id"
+                  class="notif-item"
+                  :class="{ 'notif-item--unread': n.status === 0 }"
+                >
+                  <div class="notif-item__dot" :class="'notif-item__dot--' + n.level"></div>
+                  <div class="notif-item__body">
+                    <div class="notif-item__title">{{ n.title }}</div>
+                    <div v-if="n.content" class="notif-item__content">{{ n.content }}</div>
+                    <div class="notif-item__time">{{ formatTime(n.createdAt) }}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </el-popover>
+
           <el-button class="shell__logout-btn" size="small" @click="handleLogout">退出登录</el-button>
         </div>
       </el-header>
@@ -91,11 +158,17 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount } from "vue";
+import { computed, onMounted, onBeforeUnmount, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { ElNotification } from "element-plus";
+import { ElNotification, ElMessage } from "element-plus";
+import { Loading } from "@element-plus/icons-vue";
 import { useAuthStore } from "../stores/auth";
 import { connectWs, closeWs, unreadBadge, resetBadge, type WsNotification } from "../utils/ws";
+import {
+  listNotificationsApi,
+  markNotificationsReadApi,
+  broadcastNotificationApi,
+} from "../api/notifications";
 
 defineProps<{ title: string }>();
 
@@ -133,6 +206,64 @@ const handleLogout = () => {
   authStore.logout();
   router.push("/login");
 };
+
+// ── 通知面板 ──
+const notifPanelVisible = ref(false);
+const notifLoading = ref(false);
+const notifications = ref<any[]>([]);
+
+const broadcastForm = ref({ title: "", content: "", level: "info", target: "all" });
+const broadcasting = ref(false);
+
+const loadNotifications = async () => {
+  notifLoading.value = true;
+  try {
+    const res = await listNotificationsApi({ limit: 30 });
+    notifications.value = res.data ?? [];
+  } catch {
+    // ignore
+  } finally {
+    notifLoading.value = false;
+  }
+};
+
+const markAllRead = async () => {
+  try {
+    await markNotificationsReadApi({ all: true });
+    notifications.value.forEach((n) => (n.status = 1));
+    resetBadge();
+  } catch {
+    ElMessage.error("操作失败");
+  }
+};
+
+const sendBroadcast = async () => {
+  if (!broadcastForm.value.title.trim()) {
+    ElMessage.warning("请填写公告标题");
+    return;
+  }
+  broadcasting.value = true;
+  try {
+    const res = await broadcastNotificationApi(broadcastForm.value);
+    ElMessage.success(`已发送给 ${res.data} 名用户`);
+    broadcastForm.value.title = "";
+    broadcastForm.value.content = "";
+  } catch {
+    ElMessage.error("发布失败");
+  } finally {
+    broadcasting.value = false;
+  }
+};
+
+const formatTime = (val: string | null) => {
+  if (!val) return "";
+  const d = new Date(val);
+  return `${d.getMonth() + 1}/${d.getDate()} ${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+};
+
+watch(notifPanelVisible, (v) => {
+  if (v) loadNotifications();
+});
 
 let onMessage: ((n: WsNotification) => void) | null = null;
 
@@ -422,5 +553,100 @@ onBeforeUnmount(() => {
 /* Element Plus 菜单覆盖（兜底，实际菜单已用自定义 router-link 替代） */
 :deep(.el-menu) {
   border-right: none !important;
+}
+
+/* ── 通知面板 ── */
+.notif-panel {
+  max-height: 480px;
+  display: flex;
+  flex-direction: column;
+}
+
+.notif-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.notif-panel__title {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--edu-text-main);
+}
+
+.notif-panel__actions {
+  display: flex;
+  gap: 4px;
+}
+
+.notif-panel__broadcast {
+  margin-bottom: 4px;
+}
+
+.notif-list {
+  overflow-y: auto;
+  max-height: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.notif-item {
+  display: flex;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: #f8fafc;
+  border: 1px solid transparent;
+  transition: background 0.15s;
+}
+
+.notif-item--unread {
+  background: #eff9f6;
+  border-color: #d1fae5;
+}
+
+.notif-item__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 5px;
+  background: #94a3b8;
+}
+
+.notif-item__dot--info    { background: #3b82f6; }
+.notif-item__dot--warning { background: #f59e0b; }
+.notif-item__dot--danger  { background: #ef4444; }
+.notif-item__dot--success { background: #10b981; }
+
+.notif-item__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.notif-item__title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--edu-text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item__content {
+  font-size: 12px;
+  color: var(--edu-text-sub);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notif-item__time {
+  font-size: 11px;
+  color: #94a3b8;
+  margin-top: 3px;
 }
 </style>

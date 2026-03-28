@@ -76,6 +76,25 @@ public class NotificationService {
         return userNotificationMapper.selectList(query);
     }
 
+    /**
+     * 广播公告给指定目标人群 (all / student / teacher)
+     */
+    public int broadcast(String title, String content, String level, String target) {
+        String normalizedTarget = target == null ? "all" : target.trim().toLowerCase();
+        LambdaQueryWrapper<SysUser> query = new LambdaQueryWrapper<SysUser>()
+                .eq(SysUser::getStatus, 1);
+        if ("student".equals(normalizedTarget)) {
+            query.eq(SysUser::getRole, "STUDENT");
+        } else if ("teacher".equals(normalizedTarget)) {
+            query.eq(SysUser::getRole, "TEACHER");
+        }
+        List<SysUser> targets = sysUserMapper.selectList(query);
+        for (SysUser u : targets) {
+            createNotification(u.getId(), title, content, level, "broadcast", null);
+        }
+        return targets.size();
+    }
+
     public int markRead(SysUser actor, boolean all, List<Long> ids) {
         if (!all && (ids == null || ids.isEmpty())) {
             throw new BusinessException(ErrorCodes.BAD_REQUEST, "ids cannot be empty when all=false");
