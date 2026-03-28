@@ -142,7 +142,30 @@ const handleReset = () => {
 
 <style scoped>
 .change-password {
-  max-width: 600px;
+  max-width: 560px;
   margin: 0 auto;
+}
+
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 16px rgba(22, 163, 127, 0.09);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
+  font-weight: 700;
+  color: #1a2e26;
+}
+
+:deep(.el-button--primary) {
+  background: linear-gradient(135deg, #16a37f, #059669);
+  border-color: #16a37f;
+}
+
+:deep(.el-button--primary:hover) {
+  background: linear-gradient(135deg, #059669, #047857);
+  border-color: #059669;
 }
 </style>

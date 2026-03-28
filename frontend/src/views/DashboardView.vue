@@ -959,10 +959,12 @@ onBeforeUnmount(() => {
 }
 
 .dashboard-hero {
-  border: 1px solid var(--app-border);
+  border: 1px solid #d1fae5;
   background:
-    radial-gradient(420px 200px at 90% -10%, rgba(37, 99, 235, 0.08), transparent 60%),
+    radial-gradient(420px 240px at 90% -10%, rgba(22, 163, 127, 0.10), transparent 60%),
+    radial-gradient(300px 200px at 5% 110%, rgba(37, 99, 235, 0.07), transparent 60%),
     #ffffff;
+  border-radius: 16px !important;
 }
 
 .quick-actions {
@@ -982,33 +984,41 @@ onBeforeUnmount(() => {
 .section-title {
   font-size: 19px;
   font-weight: 700;
-  color: #101828;
+  color: #1a2e26;
 }
 
 .section-subtitle {
   margin-top: 6px;
-  color: #64748b;
+  color: #6b8f82;
   font-size: 13px;
 }
 
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
 :deep(.el-card__header) {
-  border-bottom: 1px solid var(--app-border);
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
+  font-weight: 700;
+  color: #1a2e26;
 }
 
 :deep(.el-empty) {
   padding: 24px 0 16px;
-  color: #94a3b8;
+  color: #6b8f82;
 }
 
 :deep(.el-table th) {
-  background: #f8fafc;
-  color: #475569;
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
   font-weight: 600;
 }
 
-
 :deep(.el-table .is-focus-row) {
-  --el-table-tr-bg-color: #ecf5ff;
+  --el-table-tr-bg-color: #e6f7f3;
 }
 
 .panel-header {
@@ -1016,6 +1026,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .panel-actions {
@@ -1038,16 +1049,23 @@ onBeforeUnmount(() => {
 .alert-item,
 .course-item {
   padding: 12px;
-  border: 1px solid #eaecf0;
-  border-radius: 10px;
-  background: #f8fafc;
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  background: #f7fdfb;
+  transition: box-shadow 0.18s, border-color 0.18s;
+}
+
+.alert-item:hover,
+.course-item:hover {
+  box-shadow: 0 2px 10px rgba(22, 163, 127, 0.10);
+  border-color: #16a37f;
 }
 
 .alert-item__title,
 .course-item__title {
   font-size: 14px;
   font-weight: 600;
-  color: #101828;
+  color: #1a2e26;
 }
 
 .alert-item__header {
@@ -1059,8 +1077,8 @@ onBeforeUnmount(() => {
 }
 
 .alert-item--focused {
-  border-color: #409eff;
-  box-shadow: 0 0 0 1px rgba(64, 158, 255, 0.18);
+  border-color: #16a37f;
+  box-shadow: 0 0 0 2px rgba(22, 163, 127, 0.15);
 }
 
 .alert-item--dismissed {
@@ -1071,7 +1089,7 @@ onBeforeUnmount(() => {
 
 .alert-item__meta {
   margin-top: 4px;
-  color: #667085;
+  color: #6b8f82;
   font-size: 12px;
 }
 
@@ -1083,7 +1101,7 @@ onBeforeUnmount(() => {
 
 .course-item__meta {
   margin-top: 6px;
-  color: #667085;
+  color: #6b8f82;
   font-size: 12px;
 }
 
@@ -1092,7 +1110,7 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 12px;
   flex-wrap: wrap;
-  color: #344054;
+  color: #1a2e26;
   font-size: 12px;
 }
 

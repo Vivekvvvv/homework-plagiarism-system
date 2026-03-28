@@ -471,6 +471,7 @@ watch([() => route.query.assignmentId, () => route.query.pendingOnly, () => rout
   justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
+  padding: 8px 0 4px;
 }
 
 .filter-left {
@@ -482,23 +483,26 @@ watch([() => route.query.assignmentId, () => route.query.pendingOnly, () => rout
 
 .filter-label {
   font-size: 12px;
-  color: #64748b;
+  color: #6b8f82;
+  font-weight: 500;
 }
 
 .filter-divider {
   margin: 10px 0 12px;
+  border-color: #d1fae5;
 }
 
 .summary-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
   gap: 12px;
+  padding: 8px 0;
 }
 
 .rubric-chart {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   padding: 8px 0 12px;
 }
 
@@ -511,12 +515,13 @@ watch([() => route.query.assignmentId, () => route.query.pendingOnly, () => rout
 
 .rubric-chart-label {
   font-size: 13px;
-  color: #303133;
+  color: #1a2e26;
+  font-weight: 500;
 }
 
 .rubric-chart-bar {
   height: 10px;
-  background: #f2f4f7;
+  background: #e6f7f3;
   border-radius: 999px;
   overflow: hidden;
 }
@@ -524,18 +529,31 @@ watch([() => route.query.assignmentId, () => route.query.pendingOnly, () => rout
 .rubric-chart-fill {
   display: block;
   height: 100%;
-  background: linear-gradient(90deg, #409eff, #67c23a);
+  background: linear-gradient(90deg, #16a37f, #2563eb);
+  border-radius: 999px;
 }
 
 .rubric-chart-value {
   text-align: right;
   font-size: 12px;
-  color: #606266;
+  color: #16a37f;
+  font-weight: 600;
+}
+
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
 }
 
 :deep(.el-table th) {
-  background: #f8fafc;
-  color: #475569;
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
   font-weight: 600;
 }
 </style>

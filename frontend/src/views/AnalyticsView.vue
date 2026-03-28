@@ -298,11 +298,45 @@ onMounted(async () => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .panel-actions {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
+  font-weight: 700;
+  color: #1a2e26;
+}
+
+:deep(.el-table th) {
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
+  font-weight: 600;
+}
+
+:deep(.el-tabs__item.is-active) {
+  color: #16a37f;
+  font-weight: 600;
+}
+
+:deep(.el-tabs__active-bar) {
+  background-color: #16a37f;
+}
+
+:deep(.el-statistic__number) {
+  color: #16a37f;
+  font-weight: 700;
 }
 </style>

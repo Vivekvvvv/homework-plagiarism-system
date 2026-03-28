@@ -451,10 +451,14 @@ onMounted(async () => {
 </script>
 
 <style scoped>
+/* ── 工具栏 ── */
 .toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-bottom: 4px;
 }
 
 .toolbar-left {
@@ -464,12 +468,28 @@ onMounted(async () => {
   flex-wrap: wrap;
 }
 
+/* ── 卡片统一风格覆盖 ── */
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
+  font-weight: 700;
+  color: #1a2e26;
+  font-size: 14px;
+}
+
+/* ── 趋势图 ── */
 .trend-chart-wrap {
   margin-bottom: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 8px;
-  background: #fff;
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafffe;
 }
 
 .trend-chart {
@@ -480,10 +500,10 @@ onMounted(async () => {
 
 .trend-legend {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   font-size: 12px;
-  color: #606266;
-  margin-top: 6px;
+  color: #6b8f82;
+  margin-top: 8px;
 }
 
 .legend-item {
@@ -499,15 +519,24 @@ onMounted(async () => {
   display: inline-block;
 }
 
-.legend-dot--acc {
-  background: #409eff;
+.legend-dot--acc    { background: #16a37f; }
+.legend-dot--recall { background: #2563eb; }
+.legend-dot--f1     { background: #f59e0b; }
+
+/* ── 表格 ── */
+:deep(.el-table th) {
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
+  font-weight: 600;
 }
 
-.legend-dot--recall {
-  background: #10b981;
+/* ── Tabs 风格 ── */
+:deep(.el-tabs__item.is-active) {
+  color: #16a37f;
+  font-weight: 600;
 }
 
-.legend-dot--f1 {
-  background: #f59e0b;
+:deep(.el-tabs__active-bar) {
+  background-color: #16a37f;
 }
 </style>

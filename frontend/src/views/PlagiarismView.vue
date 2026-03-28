@@ -1092,12 +1092,15 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .status-box {
@@ -1107,8 +1110,9 @@ onBeforeUnmount(() => {
 }
 
 .status-title {
-  color: var(--el-text-color-regular);
+  color: #1a2e26;
   font-size: 14px;
+  font-weight: 500;
 }
 
 .trend-header {
@@ -1116,6 +1120,7 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: 8px;
+  flex-wrap: wrap;
 }
 
 .trend-actions {
@@ -1134,10 +1139,10 @@ onBeforeUnmount(() => {
 
 .trend-chart-wrap {
   margin-bottom: 12px;
-  border: 1px solid var(--el-border-color-lighter);
-  border-radius: 8px;
-  padding: 8px;
-  background: #fff;
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafffe;
 }
 
 .trend-meta {
@@ -1145,7 +1150,7 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 14px;
   font-size: 12px;
-  color: #909399;
+  color: #6b8f82;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
@@ -1169,5 +1174,30 @@ onBeforeUnmount(() => {
   margin-top: 12px;
   display: flex;
   justify-content: flex-end;
+}
+
+:deep(.el-card) {
+  border-radius: 14px;
+  border-color: #d1fae5;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
+:deep(.el-card__header) {
+  background: linear-gradient(135deg, #f0fdf8, #e6f7f3);
+  border-bottom-color: #d1fae5;
+}
+
+:deep(.el-table th) {
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
+  font-weight: 600;
+}
+
+:deep(.el-progress-bar__outer) {
+  background: #e6f7f3 !important;
+}
+
+:deep(.el-progress-bar__inner) {
+  background: linear-gradient(90deg, #16a37f, #2563eb) !important;
 }
 </style>

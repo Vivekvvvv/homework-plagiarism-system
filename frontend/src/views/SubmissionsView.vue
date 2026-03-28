@@ -1,215 +1,175 @@
 <template>
   <AppShell title="作业提交">
-    <el-row :gutter="16">
-      <el-col :span="10">
-        <el-card>
-          <template #header>
-            <span>新建提交</span>
-          </template>
-
-          <el-form :model="form" label-width="96px">
-            <el-form-item label="作业ID">
-              <el-input-number v-model="form.assignmentId" :min="1" />
-            </el-form-item>
-            <el-form-item label="学生ID">
-              <el-input-number v-model="form.studentId" :min="1" :disabled="isStudent" />
-              <div class="hint">
-                {{ isStudent ? "学生身份会自动绑定到当前登录账号" : "教师或管理员可代学生补录提交" }}
-              </div>
-            </el-form-item>
-
-            <el-form-item label="提交方式">
-              <el-radio-group v-model="submitMode">
-                <el-radio value="file">文件上传</el-radio>
-                <el-radio value="text">在线文本</el-radio>
-              </el-radio-group>
-            </el-form-item>
-
-            <el-form-item v-if="submitMode === 'file'" label="选择文件">
-              <input type="file" accept=".txt,.doc,.docx" @change="onFileChange" />
-              <div class="hint">支持 txt/doc/docx，提交后会自动生成新版本。</div>
-            </el-form-item>
-
-            <el-form-item v-else label="作业文本">
-              <el-input
-                v-model="form.rawText"
-                type="textarea"
-                :rows="6"
-                placeholder="请输入作业文本"
-              />
-            </el-form-item>
-
-            <el-form-item>
-              <el-button type="primary" :loading="submitting" @click="submit">提交</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-col>
-
-      <el-col :span="14">
-        <el-card>
-          <template #header>
-            <div class="header-row">
-              <div class="header-left">
-                <span>提交记录与反馈</span>
-                <el-input-number v-model="queryAssignmentId" :min="1" size="small" />
-                <el-button size="small" @click="loadPageData">查询</el-button>
-                <el-input-number v-model="evolutionStudentId" :min="1" size="small" :disabled="isStudent" />
-                <el-button size="small" type="primary" plain @click="openEvolution">查看演化</el-button>
-                <el-tag v-if="focusAssignmentId" type="primary">已定位作业 #{{ focusAssignmentId }}</el-tag>
-              </div>
-            </div>
-          </template>
-
-          <div class="submission-overview">
-            <div class="summary-tags">
-              <el-tag type="info">记录 {{ feedbackSummary.total }}</el-tag>
-              <el-tag type="success">已评阅 {{ feedbackSummary.reviewed }}</el-tag>
-              <el-tag type="warning">待反馈 {{ feedbackSummary.pending }}</el-tag>
-            </div>
-            <div v-if="feedbackSummary.latest" class="summary-latest">
-              最新反馈：v{{ feedbackSummary.latest.versionNo }} · 得分 {{ feedbackSummary.latest.score }} ·
-              {{ feedbackSummary.latest.comment || feedbackSummary.latest.autoComment || "已收到教师反馈" }}
-            </div>
-            <div v-else class="summary-latest">当前还没有评阅反馈，提交后可在这里查看最新状态。</div>
+    <div class="submissions-layout">
+      <!-- 左侧：新建提交 -->
+      <div class="submit-panel">
+        <div class="edu-card">
+          <div class="edu-card__header">
+            <span class="edu-card__title">新建提交</span>
           </div>
+          <div class="edu-card__body">
+            <el-form :model="form" label-width="96px">
+              <el-form-item label="作业ID">
+                <el-input-number v-model="form.assignmentId" :min="1" class="edu-input-number" />
+              </el-form-item>
+              <el-form-item label="学生ID">
+                <el-input-number v-model="form.studentId" :min="1" :disabled="isStudent" class="edu-input-number" />
+                <div class="field-hint">
+                  {{ isStudent ? '学生身份会自动绑定到当前登录账号' : '教师或管理员可代学生补录提交' }}
+                </div>
+              </el-form-item>
 
-          <el-table :data="displayRows" border>
-            <el-table-column prop="id" label="ID" width="70" />
-            <el-table-column prop="studentId" label="学生ID" width="90" />
-            <el-table-column label="版本" width="90">
-              <template #default="{ row }">
-                <el-tag :type="row.versionNo === latestVersionNo ? 'primary' : 'info'" size="small">v{{ row.versionNo }}</el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column prop="sourceType" label="来源" width="80">
-              <template #default="{ row }">
-                {{ row.sourceType === 1 ? "文件" : "文本" }}
-              </template>
-            </el-table-column>
-            <el-table-column prop="tokenCount" label="词数" width="90" />
-            <el-table-column prop="submitTime" label="提交时间" width="180" />
-            <el-table-column label="反馈状态" width="110">
-              <template #default="{ row }">
-                <el-tag :type="reviewStatusTagType(row.reviewStatus)" size="small">
-                  {{ row.reviewStatus === "reviewed" ? "已评阅" : "待反馈" }}
-                </el-tag>
-              </template>
-            </el-table-column>
-            <el-table-column label="得分" width="90">
-              <template #default="{ row }">
-                {{ row.score === null ? "-" : row.score }}
-              </template>
-            </el-table-column>
-            <el-table-column label="评阅时间" width="180">
-              <template #default="{ row }">
-                {{ row.reviewedAt || "-" }}
-              </template>
-            </el-table-column>
-            <el-table-column label="反馈" min-width="240">
-              <template #default="{ row }">
-                <div class="feedback-text">{{ row.comment || row.autoComment || "暂未生成反馈" }}</div>
-              </template>
-            </el-table-column>
-          </el-table>
-        </el-card>
-      </el-col>
-    </el-row>
+              <el-form-item label="提交方式">
+                <el-radio-group v-model="submitMode">
+                  <el-radio value="file">文件上传</el-radio>
+                  <el-radio value="text">在线文本</el-radio>
+                </el-radio-group>
+              </el-form-item>
 
-    <el-dialog v-model="evolutionVisible" title="版本演化分析" width="860px">
-      <div class="hint" style="margin-bottom: 10px">
-        作业ID：{{ queryAssignmentId }}，学生ID：{{ evolutionStudentId }}
-      </div>
-      <div class="evolution-metrics">
-        <el-tag type="info">最新得分 {{ evolutionMetrics.latestScore }}</el-tag>
-        <el-tag type="success">平均得分 {{ evolutionMetrics.avgScore }}</el-tag>
-        <el-tag type="warning">平均改动率 {{ evolutionMetrics.avgChangeRate }}%</el-tag>
-      </div>
-      <div v-if="evolutionRows.length > 0" class="evolution-chart-wrap">
-        <svg :viewBox="`0 0 ${evolutionChartWidth} ${evolutionChartHeight}`" class="evolution-chart" role="img">
-          <line
-            :x1="evolutionChartPadding.left"
-            :y1="evolutionChartPadding.top"
-            :x2="evolutionChartPadding.left"
-            :y2="evolutionChartHeight - evolutionChartPadding.bottom"
-            stroke="#c0c4cc"
-          />
-          <line
-            :x1="evolutionChartPadding.left"
-            :y1="evolutionChartHeight - evolutionChartPadding.bottom"
-            :x2="evolutionChartWidth - evolutionChartPadding.right"
-            :y2="evolutionChartHeight - evolutionChartPadding.bottom"
-            stroke="#c0c4cc"
-          />
+              <el-form-item v-if="submitMode === 'file'" label="选择文件">
+                <div class="file-upload-area">
+                  <input type="file" accept=".txt,.doc,.docx" @change="onFileChange" class="file-input" />
+                  <div class="field-hint">支持 txt / doc / docx，提交后自动生成新版本</div>
+                </div>
+              </el-form-item>
 
-          <g v-for="tick in evolutionChartData.yTicks" :key="tick.value">
-            <line
-              :x1="evolutionChartPadding.left"
-              :y1="tick.y"
-              :x2="evolutionChartWidth - evolutionChartPadding.right"
-              :y2="tick.y"
-              stroke="#ebeef5"
-            />
-            <text :x="evolutionChartPadding.left - 8" :y="tick.y + 4" text-anchor="end" fill="#909399" font-size="12">
-              {{ tick.value }}
-            </text>
-          </g>
+              <el-form-item v-else label="作业文本">
+                <el-input
+                  v-model="form.rawText"
+                  type="textarea"
+                  :rows="6"
+                  placeholder="请输入作业文本内容"
+                  class="edu-textarea"
+                />
+              </el-form-item>
 
-          <polyline
-            v-if="evolutionChartData.scorePoints.length > 1"
-            :points="evolutionChartData.scorePolyline"
-            fill="none"
-            stroke="#409eff"
-            stroke-width="2.5"
-          />
-          <polyline
-            v-if="evolutionChartData.changePoints.length > 1"
-            :points="evolutionChartData.changePolyline"
-            fill="none"
-            stroke="#f59e0b"
-            stroke-width="2.5"
-          />
-
-          <g v-for="point in evolutionChartData.scorePoints" :key="`score-${point.label}-${point.x}`">
-            <circle :cx="point.x" :cy="point.y" r="4.5" fill="#409eff" />
-            <circle :cx="point.x" :cy="point.y" r="2" fill="#ffffff" />
-            <title>{{ point.label }} 得分 {{ point.value }}</title>
-          </g>
-          <g v-for="point in evolutionChartData.changePoints" :key="`change-${point.label}-${point.x}`">
-            <circle :cx="point.x" :cy="point.y" r="4.5" fill="#f59e0b" />
-            <circle :cx="point.x" :cy="point.y" r="2" fill="#ffffff" />
-            <title>{{ point.label }} 改动率 {{ point.value }}%</title>
-          </g>
-
-          <text
-            v-for="point in evolutionLabelPoints"
-            :key="`label-${point.label}-${point.x}`"
-            :x="point.x"
-            :y="evolutionChartHeight - evolutionChartPadding.bottom + 16"
-            text-anchor="middle"
-            fill="#909399"
-            font-size="11"
-          >
-            {{ point.label }}
-          </text>
-        </svg>
-        <div class="evolution-legend">
-          <span class="legend-item"><i class="legend-dot legend-dot--score"></i>得分</span>
-          <span class="legend-item"><i class="legend-dot legend-dot--change"></i>改动率(%)</span>
+              <el-form-item>
+                <el-button type="primary" :loading="submitting" @click="submit" class="submit-btn">提交作业</el-button>
+              </el-form-item>
+            </el-form>
+          </div>
         </div>
       </div>
+
+      <!-- 右侧：提交记录 -->
+      <div class="records-panel">
+        <div class="edu-card">
+          <div class="edu-card__header">
+            <span class="edu-card__title">提交记录与反馈</span>
+            <div class="header-controls">
+              <el-input-number v-model="queryAssignmentId" :min="1" size="small" class="edu-input-number" />
+              <el-button size="small" @click="loadPageData">查询</el-button>
+              <el-input-number v-model="evolutionStudentId" :min="1" size="small" :disabled="isStudent" class="edu-input-number" />
+              <el-button size="small" type="primary" plain @click="openEvolution">版本演化</el-button>
+              <el-tag v-if="focusAssignmentId" type="primary" size="small">定位 #{{ focusAssignmentId }}</el-tag>
+            </div>
+          </div>
+
+          <div class="edu-card__body">
+            <div v-if="feedbackSummary" class="feedback-overview">
+              <div class="feedback-tags">
+                <span class="feedback-chip feedback-chip--blue">已提交 {{ feedbackSummary.totalCount }} 次</span>
+                <span class="feedback-chip feedback-chip--green" v-if="feedbackSummary.reviewedCount > 0">已评阅 {{ feedbackSummary.reviewedCount }} 次</span>
+                <span class="feedback-chip feedback-chip--amber" v-if="feedbackSummary.pendingCount > 0">待反馈 {{ feedbackSummary.pendingCount }} 次</span>
+              </div>
+              <div v-if="feedbackSummary.latest" class="feedback-latest">
+                最新：v{{ feedbackSummary.latest.versionNo }} · 得分 <strong>{{ feedbackSummary.latest.score }}</strong> ·
+                {{ feedbackSummary.latest.comment || feedbackSummary.latest.autoComment || '已收到教师反馈' }}
+              </div>
+              <div v-else class="feedback-latest">当前还没有评阅反馈，提交后可在这里查看最新状态。</div>
+            </div>
+
+            <el-table :data="displayRows" border size="small" class="edu-table">
+              <el-table-column prop="id" label="ID" width="70" />
+              <el-table-column prop="studentId" label="学生ID" width="90" />
+              <el-table-column label="版本" width="90">
+                <template #default="{ row }">
+                  <el-tag :type="row.versionNo === latestVersionNo ? 'primary' : 'info'" size="small">v{{ row.versionNo }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="sourceType" label="来源" width="80">
+                <template #default="{ row }">
+                  {{ row.sourceType === 1 ? '文件' : '文本' }}
+                </template>
+              </el-table-column>
+              <el-table-column prop="tokenCount" label="词数" width="90" />
+              <el-table-column prop="submitTime" label="提交时间" width="180" />
+              <el-table-column label="反馈状态" width="100">
+                <template #default="{ row }">
+                  <el-tag :type="reviewStatusTagType(row.reviewStatus)" size="small">
+                    {{ row.reviewStatus === 'reviewed' ? '已评阅' : '待反馈' }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column label="得分" width="80">
+                <template #default="{ row }">
+                  <span :class="row.score !== null ? 'score-value' : 'score-empty'">
+                    {{ row.score === null ? '–' : row.score }}
+                  </span>
+                </template>
+              </el-table-column>
+              <el-table-column label="评阅时间" width="160">
+                <template #default="{ row }">{{ row.reviewedAt || '–' }}</template>
+              </el-table-column>
+              <el-table-column label="反馈" min-width="200">
+                <template #default="{ row }">
+                  <span class="feedback-text">{{ row.comment || row.autoComment || '暂未生成反馈' }}</span>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 版本演化弹窗 -->
+    <el-dialog v-model="evolutionVisible" title="版本演化分析" width="860px">
+      <div class="evo-meta">作业 ID：{{ queryAssignmentId }}，学生 ID：{{ evolutionStudentId }}</div>
+      <div class="evo-chips">
+        <span class="feedback-chip feedback-chip--blue">最新得分 {{ evolutionMetrics.latestScore }}</span>
+        <span class="feedback-chip feedback-chip--green">平均得分 {{ evolutionMetrics.avgScore }}</span>
+        <span class="feedback-chip feedback-chip--amber">平均改动率 {{ evolutionMetrics.avgChangeRate }}%</span>
+      </div>
+      <div v-if="evolutionRows.length > 0">
+        <div class="evo-chart-wrap">
+          <svg class="evo-chart" :viewBox="`0 0 ${evolutionChartData.width} ${evolutionChartHeight}`" preserveAspectRatio="xMidYMid meet">
+            <line v-for="i in 4" :key="`grid-${i}`"
+              :x1="evolutionChartData.padLeft" :x2="evolutionChartData.width - evolutionChartData.padRight"
+              :y1="evolutionChartData.padTop + (i-1) * evolutionChartData.rowH"
+              :y2="evolutionChartData.padTop + (i-1) * evolutionChartData.rowH"
+              stroke="#d1fae5" stroke-dasharray="4 3" />
+            <polyline v-if="evolutionChartData.scoreLine" :points="evolutionChartData.scoreLine" fill="none" stroke="#16a37f" stroke-width="2.5" stroke-linejoin="round" />
+            <polyline v-if="evolutionChartData.changeLine" :points="evolutionChartData.changeLine" fill="none" stroke="#f59e0b" stroke-width="2" stroke-dasharray="5 3" stroke-linejoin="round" />
+            <g v-for="point in evolutionChartData.scorePoints" :key="`sp-${point.label}`">
+              <circle :cx="point.x" :cy="point.y" r="5" fill="#16a37f" />
+              <circle :cx="point.x" :cy="point.y" r="2.5" fill="#fff" />
+            </g>
+            <g v-for="point in evolutionChartData.changePoints" :key="`cp-${point.label}`">
+              <circle :cx="point.x" :cy="point.y" r="4.5" fill="#f59e0b" />
+              <circle :cx="point.x" :cy="point.y" r="2" fill="#fff" />
+            </g>
+            <text v-for="point in evolutionLabelPoints" :key="`lbl-${point.label}`"
+              :x="point.x" :y="evolutionChartHeight - evolutionChartPadding.bottom + 16"
+              text-anchor="middle" fill="#6b8f82" font-size="11">{{ point.label }}</text>
+          </svg>
+          <div class="evo-legend">
+            <span class="legend-item"><i class="legend-dot legend-dot--score"></i>得分</span>
+            <span class="legend-item"><i class="legend-dot legend-dot--change"></i>改动率(%)</span>
+          </div>
+        </div>
+        <el-table :data="evolutionRows" border size="small" class="edu-table">
+          <el-table-column prop="submissionId" label="提交ID" width="90" />
+          <el-table-column prop="versionNo" label="版本" width="80" />
+          <el-table-column prop="tokenCount" label="词数" width="90" />
+          <el-table-column prop="similarityToPrevious" label="与上版相似度" width="130" />
+          <el-table-column prop="changeRate" label="改动率" width="100" />
+          <el-table-column prop="score" label="得分" width="90" />
+          <el-table-column prop="reviewedAt" label="评阅时间" width="170" />
+          <el-table-column prop="minutesSincePrevious" label="间隔(分)" width="100" />
+          <el-table-column prop="submitTime" label="提交时间" />
+        </el-table>
+      </div>
       <el-empty v-else description="暂无演化数据" />
-      <el-table :data="evolutionRows" border>
-        <el-table-column prop="submissionId" label="提交ID" width="90" />
-        <el-table-column prop="versionNo" label="版本" width="80" />
-        <el-table-column prop="tokenCount" label="词数" width="90" />
-        <el-table-column prop="similarityToPrevious" label="与上一版相似度" width="140" />
-        <el-table-column prop="changeRate" label="改动率" width="100" />
-        <el-table-column prop="score" label="得分" width="90" />
-        <el-table-column prop="reviewedAt" label="评阅时间" width="170" />
-        <el-table-column prop="minutesSincePrevious" label="间隔分钟" width="100" />
-        <el-table-column prop="submitTime" label="提交时间" />
-      </el-table>
     </el-dialog>
   </AppShell>
 </template>
@@ -260,55 +220,20 @@ const submitting = ref(false);
 const selectedFile = ref<File | null>(null);
 const queryAssignmentId = ref(1);
 const focusAssignmentId = ref<number | null>(null);
-const tableData = ref<SubmissionRow[]>([]);
-const reviewRows = ref<ReviewRow[]>([]);
-const evolutionStudentId = ref(3);
+const evolutionStudentId = ref(1);
 const evolutionVisible = ref(false);
 const evolutionRows = ref<EvolutionRow[]>([]);
-const evolutionChartWidth = 760;
+const tableData = ref<SubmissionRow[]>([]);
+const reviewRows = ref<ReviewRow[]>([]);
 const evolutionChartHeight = 220;
-const evolutionChartPadding = {
-  left: 50,
-  right: 20,
-  top: 16,
-  bottom: 30,
-};
-const isStudent = computed(() => (authStore.user?.role || "").trim().toUpperCase() === "STUDENT");
+const evolutionChartPadding = { top: 20, bottom: 24, left: 48, right: 20 };
+
+const isStudent = computed(() => authStore.user?.role === "student");
 
 const form = reactive({
   assignmentId: 1,
-  studentId: 3,
+  studentId: authStore.user?.id ?? 1,
   rawText: "",
-});
-
-const displayRows = computed<SubmissionDisplayRow[]>(() => buildSubmissionDisplayRows(tableData.value, reviewRows.value));
-const latestVersionNo = computed(() => resolveLatestVersionNo(displayRows.value));
-const feedbackSummary = computed(() => buildFeedbackSummary(displayRows.value));
-const evolutionChartData = computed(() =>
-  buildEvolutionChartData(evolutionRows.value, evolutionChartWidth, evolutionChartHeight, evolutionChartPadding)
-);
-const evolutionLabelPoints = computed(() => evolutionChartData.value.scorePoints.filter((point) => point.showLabel));
-const evolutionMetrics = computed(() => {
-  if (evolutionRows.value.length === 0) {
-    return { latestScore: "-", avgScore: "-", avgChangeRate: "-" };
-  }
-  const scoreRows = evolutionRows.value.filter((row) => row.score !== null && row.score !== undefined);
-  const latestScore = scoreRows.length > 0 ? scoreRows[scoreRows.length - 1].score ?? 0 : null;
-  const avgScore =
-    scoreRows.length > 0
-      ? (
-          scoreRows.reduce((sum, row) => sum + Number(row.score || 0), 0) / scoreRows.length
-        ).toFixed(2)
-      : null;
-  const avgChangeRate =
-    evolutionRows.value.length > 0
-      ? ((evolutionRows.value.reduce((sum, row) => sum + Number(row.changeRate || 0), 0) / evolutionRows.value.length) * 100).toFixed(2)
-      : null;
-  return {
-    latestScore: latestScore === null ? "-" : latestScore,
-    avgScore: avgScore ?? "-",
-    avgChangeRate: avgChangeRate ?? "-",
-  };
 });
 
 const syncActorContext = () => {
@@ -318,30 +243,48 @@ const syncActorContext = () => {
   }
 };
 
-const onFileChange = (event: Event) => {
-  const target = event.target as HTMLInputElement;
-  selectedFile.value = target.files && target.files.length > 0 ? target.files[0] : null;
+const displayRows = computed(() =>
+  buildSubmissionDisplayRows(tableData.value, reviewRows.value)
+);
+const latestVersionNo = computed(() => resolveLatestVersionNo(tableData.value));
+const feedbackSummary = computed(() => buildFeedbackSummary(displayRows.value));
+const reviewStatusTagType = resolveReviewStatusTagType;
+
+const evolutionChartData = computed(() =>
+  buildEvolutionChartData(evolutionRows.value, {
+    width: 800,
+    height: evolutionChartHeight,
+    padding: evolutionChartPadding,
+  })
+);
+
+const evolutionLabelPoints = computed(() => evolutionChartData.value.scorePoints);
+const evolutionMetrics = computed(() => {
+  if (!evolutionRows.value.length) return { latestScore: "–", avgScore: "–", avgChangeRate: "–" };
+  const scores = evolutionRows.value.map((r) => r.score ?? 0).filter(Boolean);
+  const changes = evolutionRows.value.map((r) => r.changeRate ?? 0);
+  const avg = (arr: number[]) =>
+    arr.length ? (arr.reduce((a, b) => a + b, 0) / arr.length).toFixed(1) : "–";
+  return {
+    latestScore: evolutionRows.value.at(-1)?.score ?? "–",
+    avgScore: avg(scores),
+    avgChangeRate: avg(changes),
+  };
+});
+
+const onFileChange = (e: Event) => {
+  const target = e.target as HTMLInputElement;
+  selectedFile.value = target.files?.[0] ?? null;
 };
 
-const reviewStatusTagType = (status: "reviewed" | "pending") => resolveReviewStatusTagType(status);
-
 const submit = async () => {
+  syncActorContext();
+  const errMsg = validateSubmissionInput(submitMode.value, form, selectedFile.value);
+  if (errMsg) { ElMessage.warning(errMsg); return; }
   submitting.value = true;
   try {
-    syncActorContext();
-    const validationMessage = validateSubmissionInput({
-      mode: submitMode.value,
-      file: selectedFile.value,
-      rawText: form.rawText,
-      assignmentId: form.assignmentId,
-      studentId: form.studentId,
-    });
-    if (validationMessage) {
-      ElMessage.warning(validationMessage);
-      return;
-    }
-    if (submitMode.value === "file") {
-      const uploadRes = await uploadFileApi(selectedFile.value!);
+    if (submitMode.value === "file" && selectedFile.value) {
+      const uploadRes = await uploadFileApi(selectedFile.value);
       await createSubmissionApi({
         assignmentId: form.assignmentId,
         studentId: form.studentId,
@@ -354,11 +297,7 @@ const submit = async () => {
         rawText: form.rawText,
       });
     }
-
     ElMessage.success("提交成功");
-    queryAssignmentId.value = form.assignmentId;
-    form.rawText = "";
-    selectedFile.value = null;
     await loadPageData();
   } catch (error) {
     notifyApiError(error, "提交失败");
@@ -413,72 +352,160 @@ watch([() => route.query.assignmentId, () => route.query.focusAssignmentId, () =
 </script>
 
 <style scoped>
-.header-row {
+.submissions-layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+.edu-card {
+  background: #ffffff;
+  border: 1px solid #d1fae5;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 2px 12px rgba(22, 163, 127, 0.07);
+}
+
+.edu-card__header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #f0fdf8 0%, #e6f7f3 100%);
+  border-bottom: 1px solid #d1fae5;
 }
 
-.header-left {
+.edu-card__title {
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2e26;
+  letter-spacing: 0.3px;
+}
+
+.edu-card__body {
+  padding: 20px;
+}
+
+.header-controls {
   display: flex;
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
 }
 
-.submission-overview {
-  margin-bottom: 12px;
-  padding: 12px;
-  border: 1px solid #eaecf0;
-  border-radius: 10px;
-  background: #f8fafc;
+.field-hint {
+  margin-top: 6px;
+  font-size: 12px;
+  color: #6b8f82;
+  line-height: 1.4;
 }
 
-.summary-tags {
+.file-upload-area {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 6px;
 }
 
-.summary-latest {
-  margin-top: 10px;
-  color: #344054;
+.file-input {
+  padding: 6px 0;
   font-size: 13px;
-  line-height: 1.5;
+  color: #1a2e26;
 }
 
-.feedback-text {
-  color: #344054;
-  line-height: 1.5;
+.submit-btn {
+  background: linear-gradient(135deg, #16a37f, #059669);
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  padding: 10px 28px;
+  height: auto;
 }
 
-.evolution-metrics {
+.feedback-overview {
+  margin-bottom: 14px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0fdf8, #fafffe);
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+}
+
+.feedback-tags {
   display: flex;
   gap: 8px;
   flex-wrap: wrap;
   margin-bottom: 10px;
 }
 
-.evolution-chart-wrap {
-  margin-bottom: 12px;
-  border: 1px solid #ebeef5;
-  border-radius: 8px;
-  padding: 8px;
-  background: #fff;
+.feedback-chip {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  padding: 3px 10px;
 }
 
-.evolution-chart {
+.feedback-chip--blue  { background: #eff6ff; color: #2563eb; }
+.feedback-chip--green { background: #f0fdf4; color: #16a34a; }
+.feedback-chip--amber { background: #fffbeb; color: #d97706; }
+
+.feedback-latest {
+  font-size: 13px;
+  color: #344054;
+  line-height: 1.5;
+}
+
+.feedback-text {
+  font-size: 12px;
+  color: #344054;
+  line-height: 1.5;
+}
+
+.score-value {
+  font-weight: 700;
+  color: #16a37f;
+}
+
+.score-empty {
+  color: #94a3b8;
+}
+
+.evo-meta {
+  font-size: 13px;
+  color: #6b8f82;
+  margin-bottom: 10px;
+}
+
+.evo-chips {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 14px;
+}
+
+.evo-chart-wrap {
+  margin-bottom: 16px;
+  border: 1px solid #d1fae5;
+  border-radius: 12px;
+  padding: 12px;
+  background: #fafffe;
+}
+
+.evo-chart {
   width: 100%;
   height: 220px;
   display: block;
 }
 
-.evolution-legend {
+.evo-legend {
   display: flex;
-  gap: 12px;
+  gap: 14px;
   font-size: 12px;
-  color: #606266;
-  margin-top: 6px;
+  color: #6b8f82;
+  margin-top: 8px;
 }
 
 .legend-item {
@@ -494,17 +521,22 @@ watch([() => route.query.assignmentId, () => route.query.focusAssignmentId, () =
   display: inline-block;
 }
 
-.legend-dot--score {
-  background: #409eff;
+.legend-dot--score  { background: #16a37f; }
+.legend-dot--change { background: #f59e0b; }
+
+.edu-table :deep(th) {
+  background: #f0fdf8 !important;
+  color: #1a2e26 !important;
+  font-weight: 600;
 }
 
-.legend-dot--change {
-  background: #f59e0b;
+.edu-input-number {
+  width: 110px;
 }
 
-.hint {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #667085;
+@media (max-width: 900px) {
+  .submissions-layout {
+    grid-template-columns: 1fr;
+  }
 }
 </style>

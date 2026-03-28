@@ -1,9 +1,9 @@
 <template>
-<el-card class="stat-card">
-    <div class="stat-card__title">{{ title }}</div>
+  <div class="stat-card">
+    <div class="stat-card__label">{{ title }}</div>
     <div class="stat-card__value">{{ value }}</div>
     <div v-if="hint" class="stat-card__hint">{{ hint }}</div>
-  </el-card>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -16,28 +16,41 @@ defineProps<{
 
 <style scoped>
 .stat-card {
-  border: 1px solid var(--app-border);
-  background:
-    linear-gradient(180deg, rgba(37, 99, 235, 0.06) 0%, rgba(255, 255, 255, 0.9) 60%),
-    #ffffff;
-  box-shadow: var(--app-shadow);
+  background: #ffffff;
+  border: 1px solid #e2ede9;
+  border-radius: 14px;
+  padding: 18px 20px;
+  box-shadow: 0 2px 10px rgba(22, 163, 127, 0.06);
+  transition: box-shadow 0.2s, transform 0.2s;
+  cursor: default;
 }
 
-.stat-card__title {
-  color: #64748b;
-  font-size: 14px;
+.stat-card:hover {
+  box-shadow: 0 4px 18px rgba(22, 163, 127, 0.13);
+  transform: translateY(-1px);
+}
+
+.stat-card__label {
+  font-size: 12px;
+  font-weight: 500;
+  color: #6b8f82;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  margin-bottom: 8px;
 }
 
 .stat-card__value {
-  margin-top: 8px;
-  font-size: 26px;
+  font-size: 28px;
   font-weight: 700;
-  color: #0f172a;
+  color: #1a2e26;
+  line-height: 1.1;
+  letter-spacing: -0.5px;
 }
 
 .stat-card__hint {
-  margin-top: 8px;
-  color: #94a3b8;
+  margin-top: 6px;
   font-size: 12px;
+  color: #16a37f;
+  font-weight: 500;
 }
 </style>

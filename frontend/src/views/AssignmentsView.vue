@@ -1,41 +1,44 @@
 <template>
   <AppShell title="作业管理">
-    <el-card class="table-card">
-      <template #header>
-        <div class="table-header">
-          <div>
-            <div class="table-title">作业列表</div>
-            <div class="table-subtitle">按课程筛选并管理作业任务</div>
-          </div>
-          <el-button type="primary" @click="openCreate">新建作业</el-button>
+    <div class="edu-page">
+      <div class="edu-toolbar">
+        <div>
+          <div class="edu-toolbar__title">作业列表</div>
+          <div class="edu-toolbar__sub">按课程筛选并管理作业任务</div>
         </div>
-      </template>
-
-      <div class="filter-bar">
-        <div class="filter-left">
-          <span class="filter-label">课程ID</span>
-          <el-input-number v-model="courseId" :min="1" size="small" controls-position="right" />
-          <el-button size="small" type="primary" @click="loadData">加载</el-button>
-          <el-tag type="info">共 {{ tableData.length }} 项</el-tag>
-          <el-tag v-if="focusedAssignmentId" type="primary">已定位作业 #{{ focusedAssignmentId }}</el-tag>
-          <el-button v-if="routeFromDashboard" link type="primary" @click="markAssignmentCheckedAndBack">返回工作台</el-button>
-        </div>
+        <el-button type="primary" class="edu-btn-primary" @click="openCreate">+ 新建作业</el-button>
       </div>
 
-      <el-divider class="table-divider" />
+      <div class="edu-filter-bar">
+        <span class="edu-filter-label">课程 ID</span>
+        <el-input-number v-model="courseId" :min="1" size="small" controls-position="right" />
+        <el-button size="small" type="primary" class="edu-btn-primary" @click="loadData">加载</el-button>
+        <span class="edu-badge">共 {{ tableData.length }} 项</span>
+        <span v-if="focusedAssignmentId" class="edu-badge edu-badge--accent">已定位作业 #{{ focusedAssignmentId }}</span>
+        <el-button v-if="routeFromDashboard" link type="primary" @click="markAssignmentCheckedAndBack">← 返回工作台</el-button>
+      </div>
 
-      <el-table v-if="tableData.length > 0" :data="tableData" border stripe :row-class-name="tableRowClassName">
-        <el-table-column prop="id" label="ID" width="80" />
-        <el-table-column prop="title" label="标题" />
-        <el-table-column prop="courseId" label="课程ID" width="100" />
-        <el-table-column prop="deadline" label="截止时间" width="190" />
-        <el-table-column prop="maxScore" label="满分" width="100" />
-      </el-table>
-      <el-empty v-else description="暂无作业数据，可先新建作业" />
-    </el-card>
+      <div class="edu-card">
+        <el-table
+          v-if="tableData.length > 0"
+          :data="tableData"
+          border
+          stripe
+          :row-class-name="tableRowClassName"
+          class="edu-table"
+        >
+          <el-table-column prop="id" label="ID" width="80" />
+          <el-table-column prop="title" label="标题" />
+          <el-table-column prop="courseId" label="课程ID" width="100" />
+          <el-table-column prop="deadline" label="截止时间" width="190" />
+          <el-table-column prop="maxScore" label="满分" width="100" />
+        </el-table>
+        <el-empty v-else description="暂无作业数据，可点击右上角新建作业" />
+      </div>
+    </div>
 
-    <el-dialog v-model="showDialog" title="新建作业" width="560px">
-      <el-form :model="form" label-width="92px">
+    <el-dialog v-model="showDialog" title="新建作业" width="560px" class="edu-dialog">
+      <el-form :model="form" label-width="92px" class="edu-form">
         <el-form-item label="课程ID">
           <el-input-number v-model="form.courseId" :min="1" />
         </el-form-item>
@@ -62,7 +65,7 @@
       </el-form>
       <template #footer>
         <el-button @click="showDialog = false">取消</el-button>
-        <el-button type="primary" @click="submitCreate">确定</el-button>
+        <el-button type="primary" class="edu-btn-primary" @click="submitCreate">确定</el-button>
       </template>
     </el-dialog>
   </AppShell>
@@ -126,16 +129,11 @@ const loadData = async () => {
 };
 
 const openCreate = () => {
-  form.courseId = courseId.value;
   form.createdBy = authStore.user?.id || 1;
   showDialog.value = true;
 };
 
 const submitCreate = async () => {
-  if (!form.title || !form.deadline) {
-    ElMessage.warning("请填写标题和截止时间");
-    return;
-  }
   try {
     await createAssignmentApi({
       courseId: form.courseId,
@@ -147,9 +145,6 @@ const submitCreate = async () => {
     });
     ElMessage.success("创建成功");
     showDialog.value = false;
-    form.title = "";
-    form.description = "";
-    focusedAssignmentId.value = null;
     await loadData();
   } catch (error) {
     notifyApiError(error, "创建失败");
@@ -157,7 +152,8 @@ const submitCreate = async () => {
 };
 
 const tableRowClassName = ({ row }: { row: Assignment }) => {
-  return row.id === focusedAssignmentId.value ? "is-focus-row" : "";
+  if (row.id === focusedAssignmentId.value) return "is-focus-row";
+  return "";
 };
 
 const backToDashboard = (options?: { handled?: string; handledCount?: number }) => {
@@ -201,56 +197,97 @@ watch([() => route.query.courseId, () => route.query.assignmentId], async () => 
 </script>
 
 <style scoped>
-.table-header {
+.edu-page {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.edu-toolbar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid #e2ede9;
+  border-radius: 14px;
+  padding: 18px 22px;
+  box-shadow: 0 2px 10px rgba(22, 163, 127, 0.06);
 }
 
-.table-title {
+.edu-toolbar__title {
   font-size: 16px;
-  font-weight: 600;
-  color: #0f172a;
+  font-weight: 700;
+  color: #1a2e26;
 }
 
-.table-subtitle {
-  margin-top: 4px;
+.edu-toolbar__sub {
   font-size: 12px;
-  color: #64748b;
+  color: #6b8f82;
+  margin-top: 3px;
 }
 
-.filter-bar {
+.edu-btn-primary {
+  background: linear-gradient(90deg, #16a37f, #0891b2) !important;
+  border: none !important;
+  border-radius: 10px !important;
+  font-weight: 600 !important;
+}
+
+.edu-filter-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 10px;
   flex-wrap: wrap;
-  gap: 12px;
-  padding: 8px 0 4px;
+  background: #f8fdfb;
+  border: 1px solid #e2ede9;
+  border-radius: 12px;
+  padding: 12px 18px;
 }
 
-.filter-left {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.filter-label {
+.edu-filter-label {
   font-size: 12px;
-  color: #64748b;
+  color: #6b8f82;
+  font-weight: 500;
 }
 
-.table-divider {
-  margin: 8px 0 12px;
-}
-
-:deep(.el-table .is-focus-row) {
-  --el-table-tr-bg-color: #ecf5ff;
-}
-
-:deep(.el-table th) {
-  background: #f8fafc;
-  color: #475569;
+.edu-badge {
+  font-size: 12px;
+  background: #e6f7f3;
+  color: #16a37f;
+  padding: 3px 10px;
+  border-radius: 999px;
   font-weight: 600;
+}
+
+.edu-badge--accent {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.edu-card {
+  background: #ffffff;
+  border: 1px solid #e2ede9;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(22, 163, 127, 0.06);
+}
+
+.edu-table :deep(th) {
+  background: #f0fdf8 !important;
+  color: #2d5748 !important;
+  font-weight: 700 !important;
+}
+
+.edu-table :deep(.is-focus-row) {
+  --el-table-tr-bg-color: #e0f2fe;
+}
+
+.edu-dialog :deep(.el-dialog) {
+  border-radius: 16px !important;
+}
+
+.edu-form :deep(.el-input__wrapper),
+.edu-form :deep(.el-textarea__inner) {
+  border-radius: 10px !important;
 }
 </style>
