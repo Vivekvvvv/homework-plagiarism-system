@@ -5,6 +5,7 @@ import com.example.homework.domain.entity.SysUser;
 import com.example.homework.domain.entity.UserNotification;
 import com.example.homework.security.UserRole;
 import com.example.homework.service.AuthService;
+import com.example.homework.service.AuthzService;
 import com.example.homework.service.NotificationService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,6 +43,9 @@ class NotificationControllerTest {
     @Mock
     private AuthService authService;
 
+    @Mock
+    private AuthzService authzService;
+
     private MockMvc mockMvc;
 
     private final ObjectMapper objectMapper = new ObjectMapper().findAndRegisterModules();
@@ -50,7 +54,7 @@ class NotificationControllerTest {
     void setUp() {
         LocalValidatorFactoryBean validator = new LocalValidatorFactoryBean();
         validator.afterPropertiesSet();
-        mockMvc = MockMvcBuilders.standaloneSetup(new NotificationController(notificationService, authService))
+        mockMvc = MockMvcBuilders.standaloneSetup(new NotificationController(notificationService, authService, authzService))
             .setControllerAdvice(new GlobalExceptionHandler())
             .setMessageConverters(
                 new MappingJackson2HttpMessageConverter(objectMapper),

@@ -52,6 +52,9 @@ public class UserController {
                                           Authentication authentication) {
         SysUser actor = currentUser(authService, authentication);
         authzService.requireAdmin(actor);
+        if (actor.getId().equals(id)) {
+            return ApiResponse.fail(com.example.homework.common.exception.ErrorCodes.BAD_REQUEST, "不能修改自己的状态");
+        }
         SysUser target = sysUserMapper.selectById(id);
         if (target == null) {
             return ApiResponse.fail(com.example.homework.common.exception.ErrorCodes.NOT_FOUND, "用户不存在");

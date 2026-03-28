@@ -277,7 +277,7 @@ onMounted(() => {
         position: "bottom-right",
       });
     };
-    connectWs(authStore.token, onMessage);
+    connectWs(onMessage);
   }
 });
 

@@ -14,7 +14,7 @@
           <li>🔍 SimHash + 文本相似度双引擎查重</li>
           <li>✏️ 灵活 Rubric 评阅 · 批量打分</li>
           <li>📊 多维度数据看板 · 可视化分析</li>
-          <li>�� WebSocket 实时推送通知</li>
+          <li>🔔 WebSocket 实时推送通知</li>
         </ul>
       </div>
 
