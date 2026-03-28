@@ -23,7 +23,9 @@ export const useAuthStore = defineStore("auth", {
     },
     async fetchMe() {
       const res = await meApi();
-      this.user = res.data;
+      const data = res.data;
+      if (data?.role) data.role = data.role.toLowerCase();
+      this.user = data;
     },
     logout() {
       this.token = "";

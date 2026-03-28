@@ -6,3 +6,4 @@ export * from "./reviews";
 export * from "./plagiarism";
 export * from "./analytics";
 export * from "./notifications";
+export * from "./users";

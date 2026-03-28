@@ -9,7 +9,20 @@
           </div>
           <div class="edu-card__body">
             <el-form :model="form" label-width="96px">
-              <el-form-item label="作业ID">
+              <!-- 学生：课程→作业二级下拉；教师/管理员：直接输入作业ID -->
+              <template v-if="isStudent">
+                <el-form-item label="选择课程">
+                  <el-select v-model="selectedCourseId" placeholder="请选择课程" style="width:100%" @change="onCourseChange">
+                    <el-option v-for="c in courseList" :key="c.id" :label="c.courseName + ' (' + c.courseCode + ')'" :value="c.id" />
+                  </el-select>
+                </el-form-item>
+                <el-form-item label="选择作业">
+                  <el-select v-model="form.assignmentId" placeholder="请先选择课程" style="width:100%" :disabled="!selectedCourseId">
+                    <el-option v-for="a in assignmentList" :key="a.id" :label="a.title" :value="a.id" />
+                  </el-select>
+                </el-form-item>
+              </template>
+              <el-form-item v-else label="作业ID">
                 <el-input-number v-model="form.assignmentId" :min="1" class="edu-input-number" />
               </el-form-item>
               <el-form-item label="学生ID">
@@ -175,7 +188,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, reactive, ref, watch } from "vue";
+import { computed, reactive, ref, watch, onMounted as _onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute } from "vue-router";
 import AppShell from "../components/AppShell.vue";
@@ -187,6 +200,8 @@ import {
   submissionEvolutionApi,
   uploadFileApi,
 } from "../api/modules";
+import { listCoursesApi } from "../api/courses";
+import { listAssignmentsApi } from "../api/assignments";
 import { readOptionalPositiveIntQuery, readPositiveIntQuery, readStringQuery } from "../router/query";
 import { notifyApiError } from "../utils/notify";
 import {
@@ -229,6 +244,35 @@ const evolutionChartHeight = 220;
 const evolutionChartPadding = { top: 20, bottom: 24, left: 48, right: 20 };
 
 const isStudent = computed(() => authStore.user?.role === "student");
+
+// 学生课程→作业联动
+const courseList = ref<any[]>([]);
+const assignmentList = ref<any[]>([]);
+const selectedCourseId = ref<number | null>(null);
+
+const onCourseChange = async (courseId: number) => {
+  assignmentList.value = [];
+  form.assignmentId = 1;
+  if (!courseId) return;
+  try {
+    const res = await listAssignmentsApi(courseId);
+    assignmentList.value = Array.isArray(res.data) ? res.data : [];
+    if (assignmentList.value.length > 0) {
+      form.assignmentId = assignmentList.value[0].id;
+    }
+  } catch (error) {
+    notifyApiError(error, "加载作业列表失败");
+  }
+};
+
+const loadCourses = async () => {
+  try {
+    const res = await listCoursesApi();
+    courseList.value = Array.isArray(res.data) ? res.data : [];
+  } catch (error) {
+    notifyApiError(error, "加载课程列表失败");
+  }
+};
 
 const form = reactive({
   assignmentId: 1,
@@ -348,6 +392,11 @@ const applyRouteQuery = async () => {
 
 watch([() => route.query.assignmentId, () => route.query.focusAssignmentId, () => authStore.user?.id], async () => {
   await applyRouteQuery();
+}, { immediate: true });
+
+// 学生登录后自动加载课程列表
+watch(isStudent, (val) => {
+  if (val) loadCourses();
 }, { immediate: true });
 </script>
 

@@ -10,9 +10,10 @@
       </div>
 
       <div class="edu-filter-bar">
-        <span class="edu-filter-label">课程 ID</span>
-        <el-input-number v-model="courseId" :min="1" size="small" controls-position="right" />
-        <el-button size="small" type="primary" class="edu-btn-primary" @click="loadData">加载</el-button>
+        <span class="edu-filter-label">选择课程</span>
+        <el-select v-model="courseId" placeholder="请选择课程" size="small" style="width:260px" @change="loadData">
+          <el-option v-for="c in courseList" :key="c.id" :label="c.courseName + ' (' + c.courseCode + ')'" :value="c.id" />
+        </el-select>
         <span class="edu-badge">共 {{ tableData.length }} 项</span>
         <span v-if="focusedAssignmentId" class="edu-badge edu-badge--accent">已定位作业 #{{ focusedAssignmentId }}</span>
         <el-button v-if="routeFromDashboard" link type="primary" @click="markAssignmentCheckedAndBack">← 返回工作台</el-button>
@@ -72,11 +73,12 @@
 </template>
 
 <script setup lang="ts">
-import { reactive, ref, watch } from "vue";
+import { reactive, ref, watch, onMounted } from "vue";
 import { ElMessage } from "element-plus";
 import { useRoute, useRouter } from "vue-router";
 import AppShell from "../components/AppShell.vue";
 import { createAssignmentApi, listAssignmentsApi } from "../api/modules";
+import { listCoursesApi } from "../api/courses";
 import { readOptionalPositiveIntQuery, readPositiveIntQuery } from "../router/query";
 import { buildDashboardReturnQuery, isFromDashboard } from "../router/dashboard-context";
 import { useAuthStore } from "../stores/auth";
@@ -91,6 +93,7 @@ type Assignment = {
 };
 
 const courseId = ref(1);
+const courseList = ref<any[]>([]);
 const tableData = ref<Assignment[]>([]);
 const showDialog = ref(false);
 const focusedAssignmentId = ref<number | null>(null);
@@ -127,6 +130,21 @@ const loadData = async () => {
     notifyApiError(error, "加载作业失败");
   }
 };
+
+const loadCourses = async () => {
+  try {
+    const res = await listCoursesApi();
+    courseList.value = Array.isArray(res.data) ? res.data : [];
+    if (courseList.value.length > 0 && !route.query.courseId) {
+      courseId.value = courseList.value[0].id;
+      await loadData();
+    }
+  } catch (error) {
+    notifyApiError(error, "加载课程失败");
+  }
+};
+
+onMounted(loadCourses);
 
 const openCreate = () => {
   form.createdBy = authStore.user?.id || 1;

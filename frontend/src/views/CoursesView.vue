@@ -52,7 +52,7 @@
 import { ref, reactive, onMounted, computed } from "vue";
 import { ElMessage } from "element-plus";
 import AppShell from "../components/AppShell.vue";
-import { listCourses, createCourse } from "../api/courses";
+import { listCoursesApi as listCourses, createCourseApi as createCourse } from "../api/courses";
 import { useAuthStore } from "../stores/auth";
 import { notifyApiError } from "../utils/notify";
 

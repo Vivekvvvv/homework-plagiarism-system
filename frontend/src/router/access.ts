@@ -1,4 +1,5 @@
 const TEACHER_ROLES = new Set(["ADMIN", "TEACHER"]);
+const ADMIN_ONLY_ROLES = new Set(["ADMIN"]);
 
 export const teacherOnlyPaths = [
   "/courses",
@@ -8,6 +9,8 @@ export const teacherOnlyPaths = [
   "/evaluation",
   "/analytics",
 ] as const;
+
+const adminOnlyPaths = ["/users"] as const;
 
 type RouteAccessContext = {
   toPath: string;
@@ -25,6 +28,14 @@ export function resolveRouteRedirect({ toPath, token, role }: RouteAccessContext
   }
 
   const normalizedRole = normalizeRole(role);
+  if (
+    adminOnlyPaths.includes(toPath as (typeof adminOnlyPaths)[number]) &&
+    normalizedRole &&
+    !ADMIN_ONLY_ROLES.has(normalizedRole)
+  ) {
+    return "/dashboard";
+  }
+
   if (
     teacherOnlyPaths.includes(toPath as (typeof teacherOnlyPaths)[number]) &&
     normalizedRole &&

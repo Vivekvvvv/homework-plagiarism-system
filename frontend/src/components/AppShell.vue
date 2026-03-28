@@ -43,6 +43,10 @@
           <span class="shell__nav-icon">📈</span>
           <span>数据看板</span>
         </router-link>
+        <router-link v-if="isAdmin" class="shell__nav-item" to="/users">
+          <span class="shell__nav-icon">👥</span>
+          <span>用户管理</span>
+        </router-link>
 
         <div class="shell__nav-divider"></div>
 
@@ -101,9 +105,11 @@ const authStore = useAuthStore();
 
 const activePath = computed(() => route.path);
 const isTeacherOrAdmin = computed(() => {
-  const role = authStore.user?.role;
+  const role = authStore.user?.role?.toLowerCase();
   return role === "teacher" || role === "admin";
 });
+
+const isAdmin = computed(() => authStore.user?.role?.toLowerCase() === "admin");
 
 const userText = computed(() => {
   const user = authStore.user;
@@ -117,7 +123,7 @@ const userInitial = computed(() => {
 });
 
 const roleLabel = computed(() => {
-  const role = authStore.user?.role;
+  const role = authStore.user?.role?.toLowerCase();
   if (role === "teacher") return "教师";
   if (role === "admin") return "管理员";
   return "学生";
