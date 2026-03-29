@@ -2,7 +2,7 @@
 
 > Homework Plagiarism Detection & Review System
 
-基于 Spring Boot 3 + Vue 3 的课程作业管理平台，支持作业提交、代码/文本查重、教师评阅、实时通知和数据分析等功能。
+基于 Spring Boot 3 + Vue 3 的课程作业管理平台，支持作业提交、双算法文本查重、教师评阅、实时通知广播和数据分析等功能。
 
 ## 技术栈
 
@@ -35,13 +35,25 @@
 | 用户认证 | 注册、登录、JWT 令牌、密码修改 |
 | 课程管理 | 课程的增删改查、学生选课管理 |
 | 作业管理 | 教师发布作业、设置截止日期 |
-| 作业提交 | 学生提交作业文件、支持多种格式 |
-| 查重检测 | 文本/代码相似度检测、查重报告 |
-| 教师评阅 | 打分、批注、批量评阅 |
-| 实时通知 | WebSocket 推送通知 |
+| 作业提交 | 学生提交作业文件或在线文本，支持多版本 |
+| 查重检测 | SimHash + Jaccard 双算法融合，生成两两对比报告 |
+| 教师评阅 | 打分、批注、批量评阅、版本演化分析 |
+| 通知广播 | 管理员/教师可向全员或指定角色推送公告，WebSocket 实时接收 |
+| 用户管理 | 管理员查看/启停用户账号 |
 | 数据分析 | 提交趋势、成绩分布、查重统计 |
 | 审计日志 | 操作日志记录与查询 |
 | 系统监控 | 性能指标、系统健康检查 |
+
+## 查重算法
+
+系统采用 **SimHash + Jaccard 双算法加权融合**：
+
+| 算法 | 权重 | 原理 |
+|------|------|------|
+| SimHash | 70% | 文本指纹 + 汉明距离，对语序改动鲁棒 |
+| Jaccard | 30% | 词集合交并比，精准捕捉关键词重复 |
+
+最终相似度 = `SimHash × 0.70 + Jaccard × 0.30`，权重可在创建检测任务时自定义。
 
 ## 项目结构
 
@@ -51,20 +63,20 @@
 │   │   └── com/example/homework/
 │   │       ├── common/      # 通用工具类
 │   │       ├── config/      # 配置类
-│   │       ├── controller/  # 控制器（13个）
+│   │       ├── controller/  # 控制器
 │   │       ├── domain/      # 实体、DTO、VO
 │   │       ├── mapper/      # MyBatis 映射
 │   │       ├── service/     # 业务逻辑层
-│   │       └── util/        # 工具类
+│   │       └── util/        # 工具类（SimHash、Jaccard）
 │   ├── src/main/resources/
-│   │   ├── sql/init.sql     # 数据库初始化（16张表）
+│   │   ├── sql/init.sql     # 数据库初始化
 │   │   └── application.yml  # 应用配置
 │   └── src/test/            # 单元测试 & 集成测试
 ├── frontend/                # Vue 3 前端
 │   ├── src/
 │   │   ├── api/             # API 接口模块
-│   │   ├── components/      # 公共组件
-│   │   ├── router/          # 路由配置
+│   │   ├── components/      # 公共组件（AppShell）
+│   │   ├── router/          # 路由配置与权限守卫
 │   │   ├── views/           # 页面视图
 │   │   └── utils/           # 工具函数
 │   └── vite.config.ts
@@ -72,6 +84,7 @@
 ├── ops/                     # 运维部署脚本
 ├── scripts/                 # 自动化脚本
 ├── docs/                    # 项目文档
+├── dev.sh                   # 一键启动脚本
 └── .github/                 # CI/CD 工作流
 ```
 
@@ -90,31 +103,42 @@
 source backend/src/main/resources/sql/init.sql
 ```
 
-### 2. 启动后端
+### 2. 一键启动（推荐）
 
 ```bash
-cd backend
-mvn spring-boot:run
+bash dev.sh
 ```
 
-后端默认运行在 `http://localhost:8080`
+脚本会自动编译后端 JAR 并启动前后端：
 
-### 3. 启动前端
+| 服务 | 地址 |
+|------|------|
+| 前端 | http://localhost:5173 |
+| 后端 | http://localhost:8081 |
+
+也可单独启动：
 
 ```bash
-cd frontend
-npm install
-npm run dev
+bash dev.sh backend   # 仅后端
+bash dev.sh frontend  # 仅前端
 ```
 
-前端默认运行在 `http://localhost:5173`
+### 3. 手动启动
+
+```bash
+# 后端
+cd backend && mvn spring-boot:run
+
+# 前端
+cd frontend && npm install && npm run dev
+```
 
 ## 角色说明
 
 | 角色 | 权限 |
 |------|------|
-| `ADMIN` | 系统管理、用户管理、全局配置 |
-| `TEACHER` | 课程管理、发布作业、评阅打分、查重管理 |
+| `ADMIN` | 系统管理、用户管理、全局配置、通知广播 |
+| `TEACHER` | 课程管理、发布作业、评阅打分、查重管理、通知广播 |
 | `STUDENT` | 查看课程、提交作业、查看成绩与通知 |
 
 ## License
